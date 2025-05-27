@@ -7,6 +7,7 @@ use App\Models\Schedule;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Redirect;
 
 class ScheduleController extends Controller
 {
@@ -16,7 +17,26 @@ class ScheduleController extends Controller
         $schedules = Schedule::with(['lecturer', 'reservation'])
             ->orderBy('day')
             ->orderBy('start_time')
-            ->get();
+            ->get()
+            ->map(function ($schedule) {
+                return [
+                    'id' => $schedule->id,
+                    'day' => $schedule->day,
+                    'start_time' => $schedule->start_time,
+                    'end_time' => $schedule->end_time,
+                    'course_name' => $schedule->course_name,
+                    'room' => $schedule->room,
+                    'type' => $schedule->type,
+                    'lecturer' => [
+                        'id' => $schedule->lecturer->id,
+                        'name' => $schedule->lecturer->name,
+                    ],
+                    'reservation' => $schedule->reservation ? [
+                        'id' => $schedule->reservation->id,
+                        'status' => $schedule->reservation->status,
+                    ] : null,
+                ];
+            });
 
         return Inertia::render('Admin/Schedules/Index', [
             'schedules' => $schedules
@@ -26,7 +46,10 @@ class ScheduleController extends Controller
     // Form tambah jadwal kuliah
     public function create()
     {
-        $lecturers = User::role('lecturer')->get();
+        $lecturers = User::role('lecturer')
+            ->select('id', 'name')
+            ->get();
+
         return Inertia::render('Admin/Schedules/Create', [
             'lecturers' => $lecturers
         ]);
@@ -35,16 +58,16 @@ class ScheduleController extends Controller
     // Simpan jadwal kuliah baru
     public function store(Request $request)
     {
-        $request->validate([
-            'day'          => 'required|in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday',
-            'start_time'   => 'required|date_format:H:i',
-            'end_time'     => 'required|date_format:H:i|after:start_time',
-            'course_name'  => 'required|string',
-            'lecturer_id'  => 'required|exists:users,id',
-            'room'         => 'required|string'
+        $validated = $request->validate([
+            'day' => 'required|in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday',
+            'start_time' => 'required|date_format:H:i',
+            'end_time' => 'required|date_format:H:i|after:start_time',
+            'course_name' => 'required|string|max:255',
+            'lecturer_id' => 'required|exists:users,id',
+            'room' => 'required|string|max:50'
         ]);
 
-        // Validasi bentrok waktu di ruangan yang sama
+        // Cek jadwal bentrok
         $conflict = Schedule::where('day', $request->day)
             ->where('room', $request->room)
             ->where(function ($query) use ($request) {
@@ -54,45 +77,52 @@ class ScheduleController extends Controller
             ->exists();
 
         if ($conflict) {
-            return back()->withErrors(['conflict' => 'Jadwal bentrok dengan yang sudah ada.']);
+            return back()->withErrors([
+                'conflict' => 'Jadwal bentrok dengan jadwal yang sudah ada di ruangan tersebut.'
+            ]);
         }
 
         Schedule::create([
-            'day'           => $request->day,
-            'start_time'    => $request->start_time,
-            'end_time'      => $request->end_time,
-            'course_name'   => $request->course_name,
-            'lecturer_id'   => $request->lecturer_id,
-            'room'          => $request->room,
-            'type'          => 'lecture',
+            ...$validated,
+            'type' => 'lecture'
         ]);
 
-        return redirect()->route('admin.schedules.index')->with('success', 'Jadwal berhasil ditambahkan.');
+        return Redirect::route('admin.schedules.index')
+            ->with('message', 'Jadwal berhasil ditambahkan');
     }
 
     // Edit jadwal
     public function edit(Schedule $schedule)
     {
-        $lecturers = User::role('lecturer')->get();
         return Inertia::render('Admin/Schedules/Edit', [
-            'schedule' => $schedule,
-            'lecturers' => $lecturers
+            'schedule' => [
+                'id' => $schedule->id,
+                'day' => $schedule->day,
+                'start_time' => $schedule->start_time,
+                'end_time' => $schedule->end_time,
+                'course_name' => $schedule->course_name,
+                'room' => $schedule->room,
+                'lecturer_id' => $schedule->lecturer_id,
+            ],
+            'lecturers' => User::role('lecturer')
+                ->select('id', 'name')
+                ->get()
         ]);
     }
 
     // Update jadwal
     public function update(Request $request, Schedule $schedule)
     {
-        $request->validate([
-            'day'          => 'required|in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday',
-            'start_time'   => 'required|date_format:H:i',
-            'end_time'     => 'required|date_format:H:i|after:start_time',
-            'course_name'  => 'required|string',
-            'lecturer_id'  => 'required|exists:users,id',
-            'room'         => 'required|string'
+        $validated = $request->validate([
+            'day' => 'required|in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday',
+            'start_time' => 'required|date_format:H:i',
+            'end_time' => 'required|date_format:H:i|after:start_time',
+            'course_name' => 'required|string|max:255',
+            'lecturer_id' => 'required|exists:users,id',
+            'room' => 'required|string|max:50'
         ]);
 
-        // Validasi bentrok waktu di ruangan yang sama
+        // Cek jadwal bentrok (kecuali dengan jadwal ini sendiri)
         $conflict = Schedule::where('day', $request->day)
             ->where('room', $request->room)
             ->where('id', '!=', $schedule->id)
@@ -103,25 +133,23 @@ class ScheduleController extends Controller
             ->exists();
 
         if ($conflict) {
-            return back()->withErrors(['conflict' => 'Jadwal bentrok dengan yang sudah ada.']);
+            return back()->withErrors([
+                'conflict' => 'Jadwal bentrok dengan jadwal yang sudah ada di ruangan tersebut.'
+            ]);
         }
 
-        $schedule->update([
-            'day'           => $request->day,
-            'start_time'    => $request->start_time,
-            'end_time'      => $request->end_time,
-            'course_name'   => $request->course_name,
-            'lecturer_id'   => $request->lecturer_id,
-            'room'          => $request->room,
-        ]);
+        $schedule->update($validated);
 
-        return redirect()->route('admin.schedules.index')->with('success', 'Jadwal berhasil diperbarui.');
+        return Redirect::route('admin.schedules.index')
+            ->with('message', 'Jadwal berhasil diperbarui');
     }
 
     // Hapus jadwal
     public function destroy(Schedule $schedule)
     {
         $schedule->delete();
-        return redirect()->route('admin.schedules.index')->with('success', 'Jadwal berhasil dihapus.');
+
+        return Redirect::route('admin.schedules.index')
+            ->with('message', 'Jadwal berhasil dihapus');
     }
 }
