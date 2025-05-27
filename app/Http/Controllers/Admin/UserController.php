@@ -6,80 +6,131 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use Inertia\Inertia;
+use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Auth;
 
 class UserController extends Controller
 {
     // Menampilkan semua user (dosen & mahasiswa)
-    public function index()
+    public function index(Request $request)
     {
-        $users = User::with('roles')->whereIn('role', ['lecturer', 'student'])->get();
-        return view('admin.users.index', compact('users'));
+        $users = User::with('roles')
+            ->latest()
+            ->get()
+            ->map(function ($user) {
+                return [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'nim_nip' => $user->nim_nip,
+                    'roles' => $user->roles->map(function ($role) {
+                        return [
+                            'id' => $role->id,
+                            'name' => $role->name,
+                        ];
+                    }),
+                    'created_at' => $user->created_at->format('d M Y H:i'),
+                ];
+            });
+
+        return Inertia::render('Admin/Users/Index', [
+            'users' => $users,
+        ]);
     }
 
     // Form tambah user
     public function create()
     {
-        return view('admin.users.create');
+        return Inertia::render('Admin/Users/Create', [
+            'roles' => [
+                ['value' => 'admin', 'label' => 'Admin'],
+                ['value' => 'lecturer', 'label' => 'Lecturer'],
+                ['value' => 'student', 'label' => 'Student'],
+            ]
+        ]);
     }
 
     // Simpan user baru
     public function store(Request $request)
     {
-        $request->validate([
-            'name'     => 'required|string|max:255',
-            'email'    => 'required|email|unique:users,email',
-            'nim_nip'  => 'required|string|unique:users,nim_nip',
-            'password' => 'required|string|min:6|confirmed',
-            'role'     => 'required|in:lecturer,student',
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'nim_nip' => 'nullable|string|unique:users,nim_nip|max:100',
+            'password' => 'required|string|min:8|confirmed',
+            'role' => 'required|in:admin,lecturer,student',
         ]);
 
         $user = User::create([
-            'name'     => $request->name,
-            'email'    => $request->email,
-            'nim_nip'  => $request->nim_nip,
-            'password' => Hash::make($request->password),
-            'role'     => $request->role,
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'nim_nip' => $validated['nim_nip'],
+            'password' => Hash::make($validated['password']),
         ]);
 
-        $user->assignRole($request->role); // Spatie: tetapkan role
+        $user->assignRole($validated['role']);
 
-        return redirect()->route('admin.users.index')->with('success', 'User berhasil ditambahkan.');
+        return Redirect::route('admin.users.index')
+            ->with('message', 'User berhasil ditambahkan.');
     }
 
     // Form edit user
     public function edit(User $user)
     {
-        return view('admin.users.edit', compact('user'));
+        $user->load('roles');
+        return Inertia::render('Admin/Users/Edit', [
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'nim_nip' => $user->nim_nip,
+                'role' => $user->roles->first() ? $user->roles->first()->name : null,
+            ],
+            'roles' => [
+                ['value' => 'admin', 'label' => 'Admin'],
+                ['value' => 'lecturer', 'label' => 'Lecturer'],
+                ['value' => 'student', 'label' => 'Student'],
+            ]
+        ]);
     }
 
     // Update user
     public function update(Request $request, User $user)
     {
-        $request->validate([
-            'name'     => 'required|string|max:255',
-            'email'    => 'required|email|unique:users,email,' . $user->id,
-            'nim_nip'  => 'required|string|unique:users,nim_nip,' . $user->id,
-            'role'     => 'required|in:lecturer,student',
-            'password' => 'nullable|string|min:6|confirmed',
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email,' . $user->id,
+            'nim_nip' => 'nullable|string|unique:users,nim_nip,' . $user->id . '|max:100',
+            'role' => 'required|in:admin,lecturer,student',
+            'password' => 'nullable|string|min:8|confirmed',
         ]);
 
-        $user->update([
-            'name'     => $request->name,
-            'email'    => $request->email,
-            'nim_nip'  => $request->nim_nip,
-            'role'     => $request->role,
-            'password' => $request->password ? Hash::make($request->password) : $user->password,
-        ]);
+        $userData = [
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'nim_nip' => $validated['nim_nip'],
+        ];
 
-        $user->syncRoles([$request->role]); // update role via Spatie
+        if (!empty($validated['password'])) {
+            $userData['password'] = Hash::make($validated['password']);
+        }
 
-        return redirect()->route('admin.users.index')->with('success', 'User berhasil diperbarui.');
+        $user->update($userData);
+        $user->syncRoles([$validated['role']]);
+
+        return Redirect::route('admin.users.index')
+            ->with('message', 'User berhasil diperbarui.');
     }
 
     // Hapus user
     public function destroy(User $user)
     {
+        if ($user->id === Auth::id()) {
+            return Redirect::back()->withErrors(['error' => 'Anda tidak dapat menghapus akun Anda sendiri.']);
+        }
         $user->delete();
-        return redirect()->route('admin.users.index')->with('success', 'User berhasil dihapus.');
+        return Redirect::route('admin.users.index')
+            ->with('message', 'User berhasil dihapus.');
     }
 }
