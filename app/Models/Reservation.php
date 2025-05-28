@@ -17,12 +17,18 @@ class Reservation extends Model
         'start_time',
         'end_time',
         'purpose',
-        'status'
+        'status',
+        'lab_id'
     ];
 
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function lab(): BelongsTo
+    {
+        return $this->belongsTo(Lab::class);
     }
 
     public function schedule(): HasOne

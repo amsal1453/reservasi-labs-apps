@@ -16,9 +16,9 @@ class Schedule extends Model
         'end_time',
         'course_name',
         'lecturer_id',
-        'room',
         'type',
-        'reservation_id'
+        'reservation_id',
+        'lab_id'
     ];
 
     public function lecturer(): BelongsTo
@@ -29,5 +29,10 @@ class Schedule extends Model
     public function reservation(): BelongsTo
     {
         return $this->belongsTo(Reservation::class);
+    }
+
+    public function lab(): BelongsTo
+    {
+        return $this->belongsTo(Lab::class);
     }
 }

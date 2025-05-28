@@ -18,12 +18,12 @@ return new class extends Migration
             $table->time('end_time');
             $table->string('course_name')->nullable();
             $table->unsignedBigInteger('lecturer_id')->nullable();
-            $table->string('room')->default('Computer Lab 225');
             $table->enum('type', ['lecture', 'reservation']);
-            $table->unsignedBigInteger('reservation_id')->nullable();
+            $table->foreignId('reservation_id')->nullable()->constrained('reservations')->nullOnDelete();
+            $table->foreignId('lab_id')->constrained('labs')->onDelete('cascade');
             $table->timestamps();
-            $table->foreign('lecturer_id')->references('id')->on('users')->onDelete('set null');
-            $table->foreign('reservation_id')->references('id')->on('reservations')->onDelete('set null');
+
+            $table->foreign('lecturer_id')->references('id')->on('users')->nullOnDelete();
         });
     }
 
