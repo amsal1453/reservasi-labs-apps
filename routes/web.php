@@ -2,6 +2,7 @@
 
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\LabController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\ScheduleController;
 use App\Http\Controllers\Admin\ReservationController;
@@ -23,6 +24,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::post('/reservations/{reservation}/reject', [ReservationController::class, 'reject'])->name('reservations.reject');
 
     Route::resource('users', UserController::class);
+
+    Route::resource('labs', LabController::class);
 });
 
 Route::middleware(['auth', 'role:lecturer'])->prefix('lecturer')->group(function () {
