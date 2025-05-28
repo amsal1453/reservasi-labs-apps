@@ -1,10 +1,8 @@
 import { Head, Link, useForm } from '@inertiajs/react';
-import { ArrowLeft, LoaderCircle } from 'lucide-react';
-import * as React from 'react';
 
 import AppLayout from '@/layouts/app-layout';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -16,184 +14,157 @@ interface Lecturer {
     name: string;
 }
 
-interface Props {
+interface Lab {
+    id: number;
+    name: string;
+}
+
+interface CreateProps {
     lecturers: Lecturer[];
-    errors: Partial<Record<keyof FormData | 'conflict', string>>
+    labs: Lab[];
+    errors: Record<string, string>;
 }
 
-interface FormData {
-    day: string;
-    start_time: string;
-    end_time: string;
-    course_name: string;
-    lecturer_id: string;
-    room: string;
-    [key: string]: string | number | boolean | File | null | undefined;
-}
-
-export default function Create({ lecturers, errors: initialErrors }: Props) {
-    const { data, setData, post, processing, errors, reset } = useForm<FormData>({
+export default function Create({ lecturers, labs, errors }: CreateProps) {
+    const { data, setData, post, processing } = useForm({
         day: 'Monday',
-        start_time: '' /* e.g., 08:00 */,
-        end_time: '' /* e.g., 10:00 */,
-        course_name: '' /* e.g., Pemrograman Web Lanjut */,
-        lecturer_id: '' /* e.g., 1 */,
-        room: '' /* e.g., Lab Komputer 1 */,
+        start_time: '07:00',
+        end_time: '09:00',
+        course_name: '',
+        lecturer_id: lecturers[0]?.id || '',
+        lab_id: labs[0]?.id || '',
     });
 
-    React.useEffect(() => {
-        if (initialErrors) {
-            const initialErrorKeys = Object.keys(initialErrors) as Array<keyof typeof initialErrors>;
-            initialErrorKeys.forEach((key) => {
-                if (key in data || key === 'conflict') {
-                    setData(key as keyof FormData, initialErrors[key] as string);
-                }
-            });
-        }
-    }, [initialErrors, setData]);
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        post(route('admin.schedules.store'));
+    };
 
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Dashboard', href: route('admin.dashboard') },
-        { title: 'Schedules', href: route('admin.schedules.index') },
-        { title: 'Create New Schedule', href: route('admin.schedules.create') },
+        { title: 'Jadwal', href: route('admin.schedules.index') },
+        { title: 'Tambah Jadwal', href: route('admin.schedules.create') },
     ];
-
-    const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-
-    const submit = (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        post(route('admin.schedules.store'), {
-            onSuccess: () => reset(),
-        });
-    };
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Create New Schedule" />
+            <Head title="Tambah Jadwal" />
 
             <div className="container py-12">
-                <div className="flex items-center gap-4 mb-6">
-                    <Link href={route('admin.schedules.index')}>
-                        <Button variant="outline" size="icon">
-                            <ArrowLeft className="h-4 w-4" />
-                        </Button>
-                    </Link>
-                    <h1 className="text-2xl font-bold">Create New Schedule</h1>
+                <div className="flex justify-between items-center mb-6">
+                    <h1 className="text-2xl font-bold">Tambah Jadwal</h1>
                 </div>
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>New Schedule Details</CardTitle>
-                        <CardDescription>Fill in the form below to add a new lecture schedule.</CardDescription>
+                        <CardTitle>Form Tambah Jadwal</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <form onSubmit={submit} className="space-y-6">
+                        <form onSubmit={handleSubmit} className="space-y-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="space-y-2">
-                                    <Label htmlFor="day">Day</Label>
+                                <div>
+                                    <Label htmlFor="day">Hari</Label>
                                     <Select
                                         value={data.day}
                                         onValueChange={(value) => setData('day', value)}
                                     >
-                                        <SelectTrigger id="day" className="w-full">
-                                            <SelectValue placeholder="Select day" />
+                                        <SelectTrigger id="day">
+                                            <SelectValue placeholder="Pilih Hari" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {daysOfWeek.map((day) => (
+                                            {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map((day) => (
                                                 <SelectItem key={day} value={day}>
                                                     {day}
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>
-                                    <InputError message={errors.day} />
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label htmlFor="room">Room</Label>
-                                    <Input
-                                        id="room"
-                                        type="text"
-                                        value={data.room}
-                                        onChange={(e) => setData('room', e.target.value)}
-                                        placeholder="e.g., Computer Lab 101"
-                                        required
-                                    />
-                                    <InputError message={errors.room} />
+                                    <InputError message={errors.day} className="mt-2" />
                                 </div>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="space-y-2">
-                                    <Label htmlFor="start_time">Start Time</Label>
+                                <div>
+                                    <Label htmlFor="start_time">Waktu Mulai</Label>
                                     <Input
                                         id="start_time"
                                         type="time"
                                         value={data.start_time}
                                         onChange={(e) => setData('start_time', e.target.value)}
-                                        required
                                     />
-                                    <InputError message={errors.start_time} />
+                                    <InputError message={errors.start_time} className="mt-2" />
                                 </div>
-
-                                <div className="space-y-2">
-                                    <Label htmlFor="end_time">End Time</Label>
+                                <div>
+                                    <Label htmlFor="end_time">Waktu Selesai</Label>
                                     <Input
                                         id="end_time"
                                         type="time"
                                         value={data.end_time}
                                         onChange={(e) => setData('end_time', e.target.value)}
-                                        required
                                     />
-                                    <InputError message={errors.end_time} />
+                                    <InputError message={errors.end_time} className="mt-2" />
                                 </div>
                             </div>
 
-                            <div className="space-y-2">
-                                <Label htmlFor="course_name">Course Name</Label>
+                            <div>
+                                <Label htmlFor="course_name">Mata Kuliah</Label>
                                 <Input
                                     id="course_name"
-                                    type="text"
                                     value={data.course_name}
                                     onChange={(e) => setData('course_name', e.target.value)}
-                                    placeholder="e.g., Web Programming"
-                                    required
                                 />
-                                <InputError message={errors.course_name} />
+                                <InputError message={errors.course_name} className="mt-2" />
                             </div>
 
-                            <div className="space-y-2">
-                                <Label htmlFor="lecturer_id">Lecturer</Label>
+                            <div>
+                                <Label htmlFor="lecturer_id">Dosen</Label>
                                 <Select
-                                    value={data.lecturer_id}
-                                    onValueChange={(value) => setData('lecturer_id', value)}
+                                    value={data.lecturer_id ? data.lecturer_id.toString() : ''}
+                                    onValueChange={(value) => setData('lecturer_id', value ? parseInt(value) : '')}
                                 >
-                                    <SelectTrigger id="lecturer_id" className="w-full">
-                                        <SelectValue placeholder="Select lecturer" />
+                                    <SelectTrigger id="lecturer_id">
+                                        <SelectValue placeholder="Pilih Dosen" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {lecturers.map((lecturer) => (
-                                            <SelectItem key={lecturer.id} value={String(lecturer.id)}>
+                                            <SelectItem key={lecturer.id} value={lecturer.id.toString()}>
                                                 {lecturer.name}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
-                                <InputError message={errors.lecturer_id} />
+                                <InputError message={errors.lecturer_id} className="mt-2" />
                             </div>
 
-                            <InputError message={errors.conflict} className="mt-2" />
+                            <div>
+                                <Label htmlFor="lab_id">Lab</Label>
+                                <Select
+                                    value={data.lab_id ? data.lab_id.toString() : ''}
+                                    onValueChange={(value) => setData('lab_id', value ? parseInt(value) : '')}
+                                >
+                                    <SelectTrigger id="lab_id">
+                                        <SelectValue placeholder="Pilih Lab" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {labs.map((lab) => (
+                                            <SelectItem key={lab.id} value={lab.id.toString()}>
+                                                {lab.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <InputError message={errors.lab_id} className="mt-2" />
+                            </div>
 
-                            <div className="flex justify-end gap-2 mt-8">
+                            {errors.conflict && (
+                                <p className="text-sm text-red-500">{errors.conflict}</p>
+                            )}
+
+                            <div className="flex items-center justify-end gap-4">
                                 <Link href={route('admin.schedules.index')}>
-                                    <Button type="button" variant="outline">
-                                        Cancel
-                                    </Button>
+                                    <Button type="button" variant="outline">Batal</Button>
                                 </Link>
-                                <Button type="submit" disabled={processing}>
-                                    {processing && <LoaderCircle className="animate-spin h-4 w-4 mr-2" />}
-                                    Create Schedule
-                                </Button>
+                                <Button type="submit" disabled={processing}>Simpan</Button>
                             </div>
                         </form>
                     </CardContent>

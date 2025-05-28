@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Schedule;
 use App\Models\User;
+use App\Models\Lab;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Redirect;
@@ -14,7 +15,7 @@ class ScheduleController extends Controller
     // Tampilkan semua jadwal (kuliah dan reservasi disetujui)
     public function index()
     {
-        $schedules = Schedule::with(['lecturer', 'reservation'])
+        $schedules = Schedule::with(['lecturer', 'reservation', 'lab'])
             ->orderBy('day')
             ->orderBy('start_time')
             ->get()
@@ -25,12 +26,15 @@ class ScheduleController extends Controller
                     'start_time' => $schedule->start_time,
                     'end_time' => $schedule->end_time,
                     'course_name' => $schedule->course_name,
-                    'room' => $schedule->room,
+                'lab' => $schedule->lab ? [
+                    'id' => $schedule->lab->id,
+                    'name' => $schedule->lab->name,
+                ] : null,
                     'type' => $schedule->type,
-                    'lecturer' => [
+                'lecturer' => $schedule->lecturer ? [
                         'id' => $schedule->lecturer->id,
                         'name' => $schedule->lecturer->name,
-                    ],
+                ] : null,
                     'reservation' => $schedule->reservation ? [
                         'id' => $schedule->reservation->id,
                         'status' => $schedule->reservation->status,
@@ -49,9 +53,11 @@ class ScheduleController extends Controller
         $lecturers = User::role('lecturer')
             ->select('id', 'name')
             ->get();
+        $labs = Lab::select('id', 'name')->get();
 
         return Inertia::render('Admin/Schedules/Create', [
-            'lecturers' => $lecturers
+            'lecturers' => $lecturers,
+            'labs' => $labs
         ]);
     }
 
@@ -64,21 +70,23 @@ class ScheduleController extends Controller
             'end_time' => 'required|date_format:H:i|after:start_time',
             'course_name' => 'required|string|max:255',
             'lecturer_id' => 'required|exists:users,id',
-            'room' => 'required|string|max:50'
+            'lab_id' => 'required|exists:labs,id'
         ]);
 
         // Cek jadwal bentrok
         $conflict = Schedule::where('day', $request->day)
-            ->where('room', $request->room)
+            ->where('lab_id', $request->lab_id)
             ->where(function ($query) use ($request) {
-                $query->whereBetween('start_time', [$request->start_time, $request->end_time])
-                    ->orWhereBetween('end_time', [$request->start_time, $request->end_time]);
+            $query->where(function ($q) use ($request) {
+                $q->where('start_time', '<', $request->end_time)
+                    ->where('end_time', '>', $request->start_time);
+            });
             })
             ->exists();
 
         if ($conflict) {
             return back()->withErrors([
-                'conflict' => 'Jadwal bentrok dengan jadwal yang sudah ada di ruangan tersebut.'
+                'conflict' => 'Jadwal bentrok dengan jadwal yang sudah ada di lab tersebut.'
             ]);
         }
 
@@ -94,6 +102,7 @@ class ScheduleController extends Controller
     // Edit jadwal
     public function edit(Schedule $schedule)
     {
+        $labs = Lab::select('id', 'name')->get();
         return Inertia::render('Admin/Schedules/Edit', [
             'schedule' => [
                 'id' => $schedule->id,
@@ -101,12 +110,13 @@ class ScheduleController extends Controller
                 'start_time' => $schedule->start_time,
                 'end_time' => $schedule->end_time,
                 'course_name' => $schedule->course_name,
-                'room' => $schedule->room,
+                'lab_id' => $schedule->lab_id,
                 'lecturer_id' => $schedule->lecturer_id,
             ],
             'lecturers' => User::role('lecturer')
                 ->select('id', 'name')
-                ->get()
+                ->get(),
+            'labs' => $labs
         ]);
     }
 
@@ -119,22 +129,24 @@ class ScheduleController extends Controller
             'end_time' => 'required|date_format:H:i|after:start_time',
             'course_name' => 'required|string|max:255',
             'lecturer_id' => 'required|exists:users,id',
-            'room' => 'required|string|max:50'
+            'lab_id' => 'required|exists:labs,id'
         ]);
 
         // Cek jadwal bentrok (kecuali dengan jadwal ini sendiri)
         $conflict = Schedule::where('day', $request->day)
-            ->where('room', $request->room)
+            ->where('lab_id', $request->lab_id)
             ->where('id', '!=', $schedule->id)
             ->where(function ($query) use ($request) {
-                $query->whereBetween('start_time', [$request->start_time, $request->end_time])
-                    ->orWhereBetween('end_time', [$request->start_time, $request->end_time]);
+            $query->where(function ($q) use ($request) {
+                $q->where('start_time', '<', $request->end_time)
+                    ->where('end_time', '>', $request->start_time);
+            });
             })
             ->exists();
 
         if ($conflict) {
             return back()->withErrors([
-                'conflict' => 'Jadwal bentrok dengan jadwal yang sudah ada di ruangan tersebut.'
+                'conflict' => 'Jadwal bentrok dengan jadwal yang sudah ada di lab tersebut.'
             ]);
         }
 
