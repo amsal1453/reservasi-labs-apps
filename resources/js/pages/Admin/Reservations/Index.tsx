@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { type BreadcrumbItem } from '@/types';
 
 interface User {
     id: number;
@@ -20,9 +21,13 @@ interface User {
     nim_nip: string;
 }
 
+interface Lab {
+    id: number;
+    name: string;
+}
+
 interface Schedule {
     id: number;
-    room: string;
 }
 
 interface Reservation {
@@ -34,6 +39,7 @@ interface Reservation {
     status: 'pending' | 'approved' | 'rejected';
     created_at: string;
     user: User;
+    lab: Lab;
     schedule: Schedule | null;
 }
 
@@ -53,34 +59,35 @@ const getStatusBadge = (status: Reservation['status']) => {
 };
 
 export default function Index({ reservations }: Props) {
-    const breadcrumbs = [
+    const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Dashboard', href: route('admin.dashboard') },
-        { title: 'Reservations', href: route('admin.reservations.index') },
+        { title: 'Reservasi', href: route('admin.reservations.index') },
     ];
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Manage Reservations" />
+            <Head title="Kelola Reservasi" />
 
             <div className="container py-12">
                 <div className="flex justify-between items-center mb-6">
-                    <h1 className="text-2xl font-bold">Manage Reservations</h1>
+                    <h1 className="text-2xl font-bold">Kelola Reservasi</h1>
                 </div>
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>All Reservations</CardTitle>
+                        <CardTitle>Semua Reservasi</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>User</TableHead>
-                                    <TableHead>Purpose</TableHead>
-                                    <TableHead>Schedule</TableHead>
+                                    <TableHead>Pengguna</TableHead>
+                                    <TableHead>Tujuan</TableHead>
+                                    <TableHead>Lab</TableHead>
+                                    <TableHead>Jadwal</TableHead>
                                     <TableHead>Status</TableHead>
-                                    <TableHead>Created At</TableHead>
-                                    <TableHead className="text-right">Actions</TableHead>
+                                    <TableHead>Dibuat Pada</TableHead>
+                                    <TableHead className="text-right">Aksi</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -95,6 +102,7 @@ export default function Index({ reservations }: Props) {
                                             </div>
                                         </TableCell>
                                         <TableCell>{reservation.purpose}</TableCell>
+                                        <TableCell>{reservation.lab.name}</TableCell>
                                         <TableCell>
                                             <div>
                                                 <div>{reservation.day}</div>

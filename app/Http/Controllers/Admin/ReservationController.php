@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Reservation;
 use Illuminate\Support\Facades\DB;
 use App\Models\Schedule;
+use App\Models\Lab;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Redirect;
 
@@ -14,7 +15,7 @@ class ReservationController extends Controller
 {
     public function index()
     {
-        $reservations = Reservation::with(['user', 'schedule'])
+        $reservations = Reservation::with(['user', 'schedule', 'lab'])
             ->latest()
             ->get()
             ->map(function ($reservation) {
@@ -31,9 +32,12 @@ class ReservationController extends Controller
                         'name' => $reservation->user->name,
                         'nim_nip' => $reservation->user->nim_nip,
                     ],
+                'lab' => [
+                    'id' => $reservation->lab->id,
+                    'name' => $reservation->lab->name,
+                ],
                     'schedule' => $reservation->schedule ? [
-                        'id' => $reservation->schedule->id,
-                        'room' => $reservation->schedule->room,
+                    'id' => $reservation->schedule->id,
                     ] : null,
                 ];
             });
@@ -46,7 +50,7 @@ class ReservationController extends Controller
     // Tampilkan detail reservasi
     public function show(Reservation $reservation)
     {
-        $reservation->load(['user', 'schedule']);
+        $reservation->load(['user', 'schedule', 'lab']);
 
         return Inertia::render('Admin/Reservations/Show', [
             'reservation' => [
@@ -63,9 +67,12 @@ class ReservationController extends Controller
                     'nim_nip' => $reservation->user->nim_nip,
                     'email' => $reservation->user->email,
                 ],
+                'lab' => [
+                    'id' => $reservation->lab->id,
+                    'name' => $reservation->lab->name,
+                ],
                 'schedule' => $reservation->schedule ? [
                     'id' => $reservation->schedule->id,
-                    'room' => $reservation->schedule->room,
                 ] : null,
             ]
         ]);
@@ -79,10 +86,12 @@ class ReservationController extends Controller
         try {
             // Cek bentrok jadwal
             $conflict = Schedule::where('day', $reservation->day)
-                ->where('room', 'Computer Lab 225') // atau ambil dari request
+                ->where('lab_id', $reservation->lab_id)
                 ->where(function ($query) use ($reservation) {
-                    $query->whereBetween('start_time', [$reservation->start_time, $reservation->end_time])
-                        ->orWhereBetween('end_time', [$reservation->start_time, $reservation->end_time]);
+                $query->where(function ($q) use ($reservation) {
+                    $q->where('start_time', '<', $reservation->end_time)
+                        ->where('end_time', '>', $reservation->start_time);
+                });
                 })->exists();
 
             if ($conflict) {
@@ -101,7 +110,7 @@ class ReservationController extends Controller
                 'end_time' => $reservation->end_time,
                 'course_name' => $reservation->purpose,
                 'lecturer_id' => null,
-                'room' => 'Computer Lab 225',
+                'lab_id' => $reservation->lab_id,
                 'type' => 'reservation',
                 'reservation_id' => $reservation->id,
             ]);

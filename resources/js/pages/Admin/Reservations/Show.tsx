@@ -5,6 +5,7 @@ import AppLayout from '@/layouts/app-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { type BreadcrumbItem } from '@/types';
 
 interface User {
     id: number;
@@ -13,9 +14,13 @@ interface User {
     email: string;
 }
 
+interface Lab {
+    id: number;
+    name: string;
+}
+
 interface Schedule {
     id: number;
-    room: string;
 }
 
 interface Reservation {
@@ -27,6 +32,7 @@ interface Reservation {
     status: 'pending' | 'approved' | 'rejected';
     created_at: string;
     user: User;
+    lab: Lab;
     schedule: Schedule | null;
 }
 
@@ -46,15 +52,15 @@ const getStatusBadge = (status: Reservation['status']) => {
 };
 
 export default function Show({ reservation }: Props) {
-    const breadcrumbs = [
+    const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Dashboard', href: route('admin.dashboard') },
-        { title: 'Reservations', href: route('admin.reservations.index') },
+        { title: 'Reservasi', href: route('admin.reservations.index') },
         { title: 'Detail', href: route('admin.reservations.show', reservation.id) },
     ];
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Reservation Detail" />
+            <Head title="Detail Reservasi" />
 
             <div className="container py-12">
                 <div className="flex justify-between items-center mb-6">
@@ -64,7 +70,7 @@ export default function Show({ reservation }: Props) {
                                 <ArrowLeft className="h-4 w-4" />
                             </Button>
                         </Link>
-                        <h1 className="text-2xl font-bold">Reservation Detail</h1>
+                        <h1 className="text-2xl font-bold">Detail Reservasi</h1>
                     </div>
 
                     {reservation.status === 'pending' && (
@@ -76,7 +82,7 @@ export default function Show({ reservation }: Props) {
                             >
                                 <Button variant="outline" className="text-green-600">
                                     <CheckCircle2 className="h-4 w-4 mr-2" />
-                                    Approve
+                                    Setujui
                                 </Button>
                             </Link>
                             <Link
@@ -86,7 +92,7 @@ export default function Show({ reservation }: Props) {
                             >
                                 <Button variant="outline" className="text-red-600">
                                     <XCircle className="h-4 w-4 mr-2" />
-                                    Reject
+                                    Tolak
                                 </Button>
                             </Link>
                         </div>
@@ -96,7 +102,7 @@ export default function Show({ reservation }: Props) {
                 <div className="grid gap-6">
                     <Card>
                         <CardHeader>
-                            <CardTitle>Reservation Information</CardTitle>
+                            <CardTitle>Informasi Reservasi</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <dl className="grid grid-cols-2 gap-4">
@@ -105,22 +111,26 @@ export default function Show({ reservation }: Props) {
                                     <dd className="mt-1">{getStatusBadge(reservation.status)}</dd>
                                 </div>
                                 <div>
-                                    <dt className="text-sm font-medium text-muted-foreground">Created At</dt>
+                                    <dt className="text-sm font-medium text-muted-foreground">Dibuat Pada</dt>
                                     <dd className="mt-1">{reservation.created_at}</dd>
                                 </div>
                                 <div className="col-span-2">
-                                    <dt className="text-sm font-medium text-muted-foreground">Purpose</dt>
+                                    <dt className="text-sm font-medium text-muted-foreground">Tujuan</dt>
                                     <dd className="mt-1">{reservation.purpose}</dd>
                                 </div>
                                 <div>
-                                    <dt className="text-sm font-medium text-muted-foreground">Day</dt>
+                                    <dt className="text-sm font-medium text-muted-foreground">Hari</dt>
                                     <dd className="mt-1">{reservation.day}</dd>
                                 </div>
                                 <div>
-                                    <dt className="text-sm font-medium text-muted-foreground">Time</dt>
+                                    <dt className="text-sm font-medium text-muted-foreground">Waktu</dt>
                                     <dd className="mt-1">
                                         {reservation.start_time} - {reservation.end_time}
                                     </dd>
+                                </div>
+                                <div>
+                                    <dt className="text-sm font-medium text-muted-foreground">Lab</dt>
+                                    <dd className="mt-1">{reservation.lab.name}</dd>
                                 </div>
                             </dl>
                         </CardContent>
@@ -128,12 +138,12 @@ export default function Show({ reservation }: Props) {
 
                     <Card>
                         <CardHeader>
-                            <CardTitle>User Information</CardTitle>
+                            <CardTitle>Informasi Pengguna</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <dl className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <dt className="text-sm font-medium text-muted-foreground">Name</dt>
+                                    <dt className="text-sm font-medium text-muted-foreground">Nama</dt>
                                     <dd className="mt-1">{reservation.user.name}</dd>
                                 </div>
                                 <div>
@@ -151,13 +161,13 @@ export default function Show({ reservation }: Props) {
                     {reservation.schedule && (
                         <Card>
                             <CardHeader>
-                                <CardTitle>Schedule Information</CardTitle>
+                                <CardTitle>Informasi Jadwal</CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <dl className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <dt className="text-sm font-medium text-muted-foreground">Room</dt>
-                                        <dd className="mt-1">{reservation.schedule.room}</dd>
+                                        <dt className="text-sm font-medium text-muted-foreground">ID Jadwal</dt>
+                                        <dd className="mt-1">#{reservation.schedule.id}</dd>
                                     </div>
                                 </dl>
                             </CardContent>
