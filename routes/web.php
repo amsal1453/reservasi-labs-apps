@@ -14,7 +14,7 @@ Route::get('/', function () {
 
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('dashboard', function () {
-        return Inertia::render('dashboard');
+        return Inertia::render('Admin/Dashboard');
     })->name('dashboard');
 
     Route::resource('schedules', ScheduleController::class);
@@ -35,10 +35,26 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::delete('/notifications/{notification}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
 });
 
-Route::middleware(['auth', 'role:lecturer'])->prefix('lecturer')->group(function () {
+Route::middleware(['auth', 'role:lecturer'])->prefix('lecturer')->name('lecturer.')->group(function () {
     Route::get('dashboard', function () {
-        return Inertia::render('dashboard');
-    })->name('lecturer.dashboard');
+        return Inertia::render('Lecturer/Dashboard');
+    })->name('dashboard');
+
+    // Reservation routes
+    Route::get('/reservations', [App\Http\Controllers\Lecturer\ReservationController::class, 'index'])
+        ->name('reservations.index');
+    Route::get('/reservations/create', [App\Http\Controllers\Lecturer\ReservationController::class, 'create'])
+        ->name('reservations.create');
+    Route::post('/reservations', [App\Http\Controllers\Lecturer\ReservationController::class, 'store'])
+        ->name('reservations.store');
+    Route::get('/reservations/{reservation}', [App\Http\Controllers\Lecturer\ReservationController::class, 'show'])
+        ->name('reservations.show');
+    Route::get('/reservations/{reservation}/edit', [App\Http\Controllers\Lecturer\ReservationController::class, 'edit'])
+        ->name('reservations.edit');
+    Route::put('/reservations/{reservation}', [App\Http\Controllers\Lecturer\ReservationController::class, 'update'])
+        ->name('reservations.update');
+    Route::post('/reservations/{reservation}/cancel', [App\Http\Controllers\Lecturer\ReservationController::class, 'cancel'])
+        ->name('reservations.cancel');
 });
 
 Route::middleware(['auth', 'role:student'])->prefix('student')->group(function () {
