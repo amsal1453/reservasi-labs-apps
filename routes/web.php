@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\LabController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\ScheduleController;
 use App\Http\Controllers\Admin\ReservationController;
+use App\Http\Controllers\Admin\NotificationController;
 
 Route::get('/', function () {
     return Inertia::render('welcome');
@@ -26,6 +27,12 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::resource('users', UserController::class);
 
     Route::resource('labs', LabController::class);
+
+    // Notification routes
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::get('/notifications/{notification}', [NotificationController::class, 'show'])->name('notifications.show');
+    Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
+    Route::delete('/notifications/{notification}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
 });
 
 Route::middleware(['auth', 'role:lecturer'])->prefix('lecturer')->group(function () {
