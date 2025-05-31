@@ -28,7 +28,7 @@ const lecturerNavItems: NavItem[] = [
     },
     {
         title: 'Lab Schedules',
-        href: '/lecturer/schedules',
+        href: '/lecturer/lab-schedules',
         icon: Calendar,
     },
     {

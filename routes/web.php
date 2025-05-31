@@ -55,6 +55,9 @@ Route::middleware(['auth', 'role:lecturer'])->prefix('lecturer')->name('lecturer
         ->name('reservations.update');
     Route::post('/reservations/{reservation}/cancel', [App\Http\Controllers\Lecturer\ReservationController::class, 'cancel'])
         ->name('reservations.cancel');
+
+    Route::get('/lab-schedules', [App\Http\Controllers\Lecturer\LabScheduleController::class, 'index'])
+        ->name('lab-schedules.index');
 });
 
 Route::middleware(['auth', 'role:student'])->prefix('student')->group(function () {
