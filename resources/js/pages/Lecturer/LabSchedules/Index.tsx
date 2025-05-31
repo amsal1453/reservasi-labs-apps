@@ -1,10 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Head } from '@inertiajs/react';
 import LecturerLayout from '@/layouts/LecturerLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import FullCalendar from '@fullcalendar/react';
+import dayGridPlugin from '@fullcalendar/daygrid';
+import timeGridPlugin from '@fullcalendar/timegrid';
+import interactionPlugin from '@fullcalendar/interaction';
+import { EventContentArg } from '@fullcalendar/core';
 
 interface Lab {
     id: number;
@@ -45,74 +50,76 @@ interface PageProps {
     selectedLab: number;
 }
 
+interface CustomEventExtendedProps {
+    lecturer?: string;
+    type: 'reservation' | 'class' | string;
+}
+
 export default function Index({ schedules, labs, selectedLab }: PageProps) {
-    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    const timeSlots = generateTimeSlots();
+    const [calendarView, setCalendarView] = useState<'timeGridWeek' | 'dayGridMonth'>('timeGridWeek');
 
-    // Group schedules by day and time
-    const schedulesByDay: Record<string, Record<string, Schedule[]>> = {};
+    // Convert schedules to FullCalendar events
+    const calendarEvents = schedules.map(schedule => {
+        // Extract date part from the day name (assuming we need to map to current week)
+        const today = new Date();
+        const dayIndex = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].indexOf(schedule.day);
+        const currentDayIndex = today.getDay();
+        const diff = dayIndex - currentDayIndex;
 
-    days.forEach(day => {
-        schedulesByDay[day] = {};
-        timeSlots.forEach(slot => {
-            schedulesByDay[day][slot] = [];
-        });
-    });
+        const eventDate = new Date(today);
+        eventDate.setDate(today.getDate() + diff);
 
-    schedules.forEach(schedule => {
-        const startTime = schedule.start_time.substring(0, 5); // Format HH:MM
-        const endTime = schedule.end_time.substring(0, 5); // Format HH:MM
+        // Format the date as YYYY-MM-DD
+        const dateStr = eventDate.toISOString().split('T')[0];
 
-        // Find all time slots that this schedule spans
-        const slots = timeSlots.filter(slot => {
-            return slot >= startTime && slot < endTime;
-        });
-
-        slots.forEach(slot => {
-            if (!schedulesByDay[schedule.day]) {
-                schedulesByDay[schedule.day] = {};
-            }
-
-            if (!schedulesByDay[schedule.day][slot]) {
-                schedulesByDay[schedule.day][slot] = [];
-            }
-
-            schedulesByDay[schedule.day][slot].push(schedule);
-        });
+        // Create event object
+        return {
+            id: String(schedule.id),
+            title: schedule.reservation
+                ? `Reservasi: ${schedule.reservation.purpose}`
+                : schedule.type === 'class'
+                    ? `Kelas: ${schedule.subject}`
+                    : schedule.type,
+            start: `${dateStr}T${schedule.start_time}`,
+            end: `${dateStr}T${schedule.end_time}`,
+            extendedProps: {
+                lecturer: schedule.lecturer?.name,
+                type: schedule.reservation ? 'reservation' : schedule.type
+            },
+            backgroundColor: schedule.reservation
+                ? '#93c5fd' // blue-300
+                : schedule.type === 'class'
+                    ? '#86efac' // green-300
+                    : '#d1d5db', // gray-300
+            borderColor: schedule.reservation
+                ? '#3b82f6' // blue-500
+                : schedule.type === 'class'
+                    ? '#22c55e' // green-500
+                    : '#6b7280', // gray-500
+            textColor: '#1e293b', // slate-800
+        };
     });
 
     const handleLabChange = (labId: string) => {
         window.location.href = route('lecturer.lab-schedules.index', { lab_id: labId });
     };
 
-    function generateTimeSlots() {
-        const slots = [];
-        for (let hour = 7; hour < 18; hour++) {
-            slots.push(`${hour.toString().padStart(2, '0')}:00`);
-        }
-        return slots;
-    }
+    const handleEventContent = (eventInfo: EventContentArg) => {
+        const extendedProps = eventInfo.event.extendedProps as CustomEventExtendedProps;
 
-    const getScheduleType = (schedule: Schedule) => {
-        if (schedule.reservation) {
-            return (
-                <Badge variant="outline" className="bg-blue-100 text-blue-800">
-                    Reservasi: {schedule.reservation.purpose}
-                </Badge>
-            );
-        } else if (schedule.type === 'class') {
-            return (
-                <Badge variant="outline" className="bg-green-100 text-green-800">
-                    Kelas: {schedule.subject}
-                </Badge>
-            );
-        } else {
-            return (
-                <Badge variant="outline" className="bg-gray-100 text-gray-800">
-                    {schedule.type}
-                </Badge>
-            );
-        }
+        return (
+            <div className="p-1 text-xs">
+                <div className="font-semibold">{eventInfo.event.title}</div>
+                <div className="mt-1">
+                    {eventInfo.timeText}
+                </div>
+                {extendedProps.lecturer && (
+                    <div className="text-xs">
+                        Dosen: {extendedProps.lecturer}
+                    </div>
+                )}
+            </div>
+        );
     };
 
     return (
@@ -152,50 +159,43 @@ export default function Index({ schedules, labs, selectedLab }: PageProps) {
                             {labs.find(lab => lab.id === selectedLab)?.name} -
                             {labs.find(lab => lab.id === selectedLab)?.location}
                         </CardTitle>
+                        <div className="flex space-x-2 mt-2">
+                            <Badge
+                                variant="outline"
+                                className="bg-blue-100 text-blue-800 cursor-pointer"
+                                onClick={() => setCalendarView('timeGridWeek')}
+                            >
+                                Week View
+                            </Badge>
+                            <Badge
+                                variant="outline"
+                                className="bg-green-100 text-green-800 cursor-pointer"
+                                onClick={() => setCalendarView('dayGridMonth')}
+                            >
+                                Month View
+                            </Badge>
+                        </div>
                     </CardHeader>
                     <CardContent>
-                        <div className="overflow-x-auto">
-                            <table className="w-full border-collapse">
-                                <thead>
-                                    <tr>
-                                        <th className="border p-2 bg-gray-50 w-20">Jam</th>
-                                        {days.map(day => (
-                                            <th key={day} className="border p-2 bg-gray-50">
-                                                {day}
-                                            </th>
-                                        ))}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {timeSlots.map((timeSlot, index) => (
-                                        <tr key={timeSlot} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                                            <td className="border p-2 text-center font-medium">
-                                                {timeSlot}
-                                            </td>
-                                            {days.map(day => (
-                                                <td key={`${day}-${timeSlot}`} className="border p-2 min-h-[60px]">
-                                                    {schedulesByDay[day][timeSlot]?.map((schedule, idx) => (
-                                                        <div
-                                                            key={`${schedule.id}-${idx}`}
-                                                            className="mb-1 p-1 rounded text-xs"
-                                                        >
-                                                            {getScheduleType(schedule)}
-                                                            <div className="mt-1 text-xs">
-                                                                {schedule.start_time.substring(0, 5)} - {schedule.end_time.substring(0, 5)}
-                                                            </div>
-                                                            {schedule.lecturer && (
-                                                                <div className="text-xs text-gray-600">
-                                                                    Dosen: {schedule.lecturer.name}
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    ))}
-                                                </td>
-                                            ))}
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                        <div className="h-[600px]">
+                            <FullCalendar
+                                plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+                                initialView={calendarView}
+                                headerToolbar={{
+                                    left: 'prev,next today',
+                                    center: 'title',
+                                    right: 'timeGridWeek,dayGridMonth'
+                                }}
+                                events={calendarEvents}
+                                eventContent={handleEventContent}
+                                slotMinTime="07:00:00"
+                                slotMaxTime="18:00:00"
+                                allDaySlot={false}
+                                weekends={true}
+                                height="100%"
+                                locale="id"
+                                firstDay={1} // Monday as first day
+                            />
                         </div>
                     </CardContent>
                 </Card>
