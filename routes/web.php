@@ -65,10 +65,24 @@ Route::middleware(['auth', 'role:lecturer'])->prefix('lecturer')->name('lecturer
     Route::post('notifications/mark-all-read', [\App\Http\Controllers\Lecturer\NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
 });
 
-Route::middleware(['auth', 'role:student'])->prefix('student')->group(function () {
-    Route::get('dashboard', function () {
-        return Inertia::render('dashboard');
-    })->name('student.dashboard');
+Route::middleware(['auth', 'role:student'])->prefix('student')->name('student.')->group(function () {
+    Route::get('dashboard', [\App\Http\Controllers\Student\DashboardController::class, 'index'])->name('dashboard');
+
+    // Add other student routes here
+    Route::get('/reservations', [\App\Http\Controllers\Student\ReservationController::class, 'index'])
+        ->name('reservations.index');
+    Route::get('/reservations/create', [\App\Http\Controllers\Student\ReservationController::class, 'create'])
+        ->name('reservations.create');
+    Route::post('/reservations', [\App\Http\Controllers\Student\ReservationController::class, 'store'])
+        ->name('reservations.store');
+
+    Route::get('/lab-schedules', [\App\Http\Controllers\Student\LabScheduleController::class, 'index'])
+        ->name('lab-schedules.index');
+
+    Route::get('/notifications', [\App\Http\Controllers\Student\NotificationController::class, 'index'])
+        ->name('notifications.index');
+    Route::get('/notifications/{notification}', [\App\Http\Controllers\Student\NotificationController::class, 'show'])
+        ->name('notifications.show');
 });
 
 
