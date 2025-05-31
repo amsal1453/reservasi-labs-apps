@@ -58,6 +58,11 @@ Route::middleware(['auth', 'role:lecturer'])->prefix('lecturer')->name('lecturer
 
     Route::get('/lab-schedules', [App\Http\Controllers\Lecturer\LabScheduleController::class, 'index'])
         ->name('lab-schedules.index');
+
+    // Notification routes
+    Route::get('notifications', [\App\Http\Controllers\Lecturer\NotificationController::class, 'index'])->name('notifications.index');
+    Route::get('notifications/{notification}', [\App\Http\Controllers\Lecturer\NotificationController::class, 'show'])->name('notifications.show');
+    Route::post('notifications/mark-all-read', [\App\Http\Controllers\Lecturer\NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
 });
 
 Route::middleware(['auth', 'role:student'])->prefix('student')->group(function () {
