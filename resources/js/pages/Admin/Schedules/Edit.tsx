@@ -15,13 +15,8 @@ interface ScheduleData {
     start_time: string;
     end_time: string;
     course_name: string;
-    lecturer_id: number;
+    lecturer_name: string;
     lab_id: number;
-}
-
-interface Lecturer {
-    id: number;
-    name: string;
 }
 
 interface Lab {
@@ -31,18 +26,17 @@ interface Lab {
 
 interface EditProps {
     schedule: ScheduleData;
-    lecturers: Lecturer[];
     labs: Lab[];
     errors: Record<string, string>;
 }
 
-export default function Edit({ schedule, lecturers, labs, errors }: EditProps) {
+export default function Edit({ schedule, labs, errors }: EditProps) {
     const { data, setData, put, processing } = useForm({
         day: schedule.day,
         start_time: schedule.start_time,
         end_time: schedule.end_time,
         course_name: schedule.course_name,
-        lecturer_id: schedule.lecturer_id || '',
+        lecturer_name: schedule.lecturer_name || '',
         lab_id: schedule.lab_id || '',
     });
 
@@ -102,8 +96,13 @@ export default function Edit({ schedule, lecturers, labs, errors }: EditProps) {
                                         type="time"
                                         value={data.start_time}
                                         onChange={(e) => setData('start_time', e.target.value)}
+                                        step="60"
+                                        pattern="[0-9]{2}:[0-9]{2}"
                                     />
                                     <InputError message={errors.start_time} className="mt-2" />
+                                    {errors.start_time ? null : (
+                                        <p className="text-xs text-muted-foreground mt-1">Format: HH:MM (contoh: 07:00)</p>
+                                    )}
                                 </div>
                                 <div>
                                     <Label htmlFor="end_time">Waktu Selesai</Label>
@@ -112,8 +111,13 @@ export default function Edit({ schedule, lecturers, labs, errors }: EditProps) {
                                         type="time"
                                         value={data.end_time}
                                         onChange={(e) => setData('end_time', e.target.value)}
+                                        step="60"
+                                        pattern="[0-9]{2}:[0-9]{2}"
                                     />
                                     <InputError message={errors.end_time} className="mt-2" />
+                                    {errors.end_time ? null : (
+                                        <p className="text-xs text-muted-foreground mt-1">Format: HH:MM (contoh: 09:00)</p>
+                                    )}
                                 </div>
                             </div>
 
@@ -128,23 +132,14 @@ export default function Edit({ schedule, lecturers, labs, errors }: EditProps) {
                             </div>
 
                             <div>
-                                <Label htmlFor="lecturer_id">Dosen</Label>
-                                <Select
-                                    value={data.lecturer_id ? data.lecturer_id.toString() : ''}
-                                    onValueChange={(value) => setData('lecturer_id', value ? parseInt(value) : '')}
-                                >
-                                    <SelectTrigger id="lecturer_id">
-                                        <SelectValue placeholder="Pilih Dosen" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {lecturers.map((lecturer) => (
-                                            <SelectItem key={lecturer.id} value={lecturer.id.toString()}>
-                                                {lecturer.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                <InputError message={errors.lecturer_id} className="mt-2" />
+                                <Label htmlFor="lecturer_name">Dosen</Label>
+                                <Input
+                                    id="lecturer_name"
+                                    placeholder="Masukkan nama dosen"
+                                    value={data.lecturer_name}
+                                    onChange={(e) => setData('lecturer_name', e.target.value)}
+                                />
+                                <InputError message={errors.lecturer_name} className="mt-2" />
                             </div>
 
                             <div>

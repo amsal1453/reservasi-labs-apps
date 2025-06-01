@@ -15,7 +15,7 @@ class ScheduleController extends Controller
     // Tampilkan semua jadwal (kuliah dan reservasi disetujui)
     public function index()
     {
-        $schedules = Schedule::with(['lecturer', 'reservation', 'lab'])
+        $schedules = Schedule::with(['reservation', 'lab'])
             ->orderBy('day')
             ->orderBy('start_time')
             ->get()
@@ -31,10 +31,13 @@ class ScheduleController extends Controller
                     'name' => $schedule->lab->name,
                 ] : null,
                     'type' => $schedule->type,
-                'lecturer' => $schedule->lecturer ? [
-                        'id' => $schedule->lecturer->id,
-                        'name' => $schedule->lecturer->name,
-                ] : null,
+                'lecturer' => $schedule->lecturer_id ? [
+                    'id' => $schedule->lecturer_id,
+                    'name' => $schedule->lecturer ? $schedule->lecturer->name : $schedule->lecturer_name,
+                ] : [
+                    'id' => null,
+                    'name' => $schedule->lecturer_name,
+                ],
                     'reservation' => $schedule->reservation ? [
                         'id' => $schedule->reservation->id,
                         'status' => $schedule->reservation->status,
@@ -50,13 +53,9 @@ class ScheduleController extends Controller
     // Form tambah jadwal kuliah
     public function create()
     {
-        $lecturers = User::role('lecturer')
-            ->select('id', 'name')
-            ->get();
         $labs = Lab::select('id', 'name')->get();
 
         return Inertia::render('Admin/Schedules/Create', [
-            'lecturers' => $lecturers,
             'labs' => $labs
         ]);
     }
@@ -69,7 +68,7 @@ class ScheduleController extends Controller
             'start_time' => 'required|date_format:H:i',
             'end_time' => 'required|date_format:H:i|after:start_time',
             'course_name' => 'required|string|max:255',
-            'lecturer_id' => 'required|exists:users,id',
+            'lecturer_name' => 'required|string|max:255',
             'lab_id' => 'required|exists:labs,id'
         ]);
 
@@ -91,7 +90,12 @@ class ScheduleController extends Controller
         }
 
         Schedule::create([
-            ...$validated,
+            'day' => $validated['day'],
+            'start_time' => $validated['start_time'],
+            'end_time' => $validated['end_time'],
+            'course_name' => $validated['course_name'],
+            'lecturer_name' => $validated['lecturer_name'],
+            'lab_id' => $validated['lab_id'],
             'type' => 'lecture'
         ]);
 
@@ -110,12 +114,9 @@ class ScheduleController extends Controller
                 'start_time' => $schedule->start_time,
                 'end_time' => $schedule->end_time,
                 'course_name' => $schedule->course_name,
+                'lecturer_name' => $schedule->lecturer_name,
                 'lab_id' => $schedule->lab_id,
-                'lecturer_id' => $schedule->lecturer_id,
             ],
-            'lecturers' => User::role('lecturer')
-                ->select('id', 'name')
-                ->get(),
             'labs' => $labs
         ]);
     }
@@ -128,7 +129,7 @@ class ScheduleController extends Controller
             'start_time' => 'required|date_format:H:i',
             'end_time' => 'required|date_format:H:i|after:start_time',
             'course_name' => 'required|string|max:255',
-            'lecturer_id' => 'required|exists:users,id',
+            'lecturer_name' => 'required|string|max:255',
             'lab_id' => 'required|exists:labs,id'
         ]);
 

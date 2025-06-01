@@ -21,6 +21,7 @@ return new class extends Migration
             $table->enum('type', ['lecture', 'reservation']);
             $table->foreignId('reservation_id')->nullable()->constrained('reservations')->nullOnDelete();
             $table->foreignId('lab_id')->constrained('labs')->onDelete('cascade');
+            $table->string('lecturer_name')->nullable();
             $table->timestamps();
 
             $table->foreign('lecturer_id')->references('id')->on('users')->nullOnDelete();

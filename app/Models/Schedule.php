@@ -16,6 +16,7 @@ class Schedule extends Model
         'end_time',
         'course_name',
         'lecturer_id',
+        'lecturer_name',
         'type',
         'reservation_id',
         'lab_id'

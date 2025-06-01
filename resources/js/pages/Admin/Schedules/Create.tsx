@@ -9,29 +9,23 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import InputError from '@/components/input-error';
 import { type BreadcrumbItem } from '@/types';
 
-interface Lecturer {
-    id: number;
-    name: string;
-}
-
 interface Lab {
     id: number;
     name: string;
 }
 
 interface CreateProps {
-    lecturers: Lecturer[];
     labs: Lab[];
     errors: Record<string, string>;
 }
 
-export default function Create({ lecturers, labs, errors }: CreateProps) {
+export default function Create({ labs, errors }: CreateProps) {
     const { data, setData, post, processing } = useForm({
         day: 'Monday',
         start_time: '07:00',
         end_time: '09:00',
         course_name: '',
-        lecturer_id: lecturers[0]?.id || '',
+        lecturer_name: '',
         lab_id: labs[0]?.id || '',
     });
 
@@ -91,8 +85,13 @@ export default function Create({ lecturers, labs, errors }: CreateProps) {
                                         type="time"
                                         value={data.start_time}
                                         onChange={(e) => setData('start_time', e.target.value)}
+                                        step="60"
+                                        pattern="[0-9]{2}:[0-9]{2}"
                                     />
                                     <InputError message={errors.start_time} className="mt-2" />
+                                    {errors.start_time ? null : (
+                                        <p className="text-xs text-muted-foreground mt-1">Format: HH:MM (contoh: 07:00)</p>
+                                    )}
                                 </div>
                                 <div>
                                     <Label htmlFor="end_time">Waktu Selesai</Label>
@@ -101,8 +100,13 @@ export default function Create({ lecturers, labs, errors }: CreateProps) {
                                         type="time"
                                         value={data.end_time}
                                         onChange={(e) => setData('end_time', e.target.value)}
+                                        step="60"
+                                        pattern="[0-9]{2}:[0-9]{2}"
                                     />
                                     <InputError message={errors.end_time} className="mt-2" />
+                                    {errors.end_time ? null : (
+                                        <p className="text-xs text-muted-foreground mt-1">Format: HH:MM (contoh: 09:00)</p>
+                                    )}
                                 </div>
                             </div>
 
@@ -117,23 +121,14 @@ export default function Create({ lecturers, labs, errors }: CreateProps) {
                             </div>
 
                             <div>
-                                <Label htmlFor="lecturer_id">Dosen</Label>
-                                <Select
-                                    value={data.lecturer_id ? data.lecturer_id.toString() : ''}
-                                    onValueChange={(value) => setData('lecturer_id', value ? parseInt(value) : '')}
-                                >
-                                    <SelectTrigger id="lecturer_id">
-                                        <SelectValue placeholder="Pilih Dosen" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {lecturers.map((lecturer) => (
-                                            <SelectItem key={lecturer.id} value={lecturer.id.toString()}>
-                                                {lecturer.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                <InputError message={errors.lecturer_id} className="mt-2" />
+                                <Label htmlFor="lecturer_name">Dosen</Label>
+                                <Input
+                                    id="lecturer_name"
+                                    placeholder="Masukkan nama dosen"
+                                    value={data.lecturer_name}
+                                    onChange={(e) => setData('lecturer_name', e.target.value)}
+                                />
+                                <InputError message={errors.lecturer_name} className="mt-2" />
                             </div>
 
                             <div>
