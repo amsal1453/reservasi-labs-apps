@@ -14,7 +14,6 @@ return new class extends Migration
         Schema::create('labs', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('location')->nullable();
             $table->integer('capacity')->nullable();
             $table->text('description')->nullable();
             $table->enum('status', ['available', 'maintenance'])->default('available');

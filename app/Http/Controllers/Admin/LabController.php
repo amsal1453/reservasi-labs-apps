@@ -24,7 +24,6 @@ class LabController extends Controller
                 return [
                     'id' => $lab->id,
                     'name' => $lab->name,
-                    'location' => $lab->location,
                     'capacity' => $lab->capacity,
                     'status' => $lab->status,
                     'schedules_count' => $lab->schedules_count,
@@ -52,7 +51,6 @@ class LabController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:labs',
-            'location' => 'nullable|string|max:255',
             'capacity' => 'nullable|integer|min:1',
             'description' => 'nullable|string',
             'status' => ['required', Rule::in(['available', 'maintenance'])]
@@ -79,7 +77,6 @@ class LabController extends Controller
             'lab' => [
                 'id' => $lab->id,
                 'name' => $lab->name,
-                'location' => $lab->location,
                 'capacity' => $lab->capacity,
                 'description' => $lab->description,
                 'status' => $lab->status,
@@ -115,7 +112,6 @@ class LabController extends Controller
             'lab' => [
                 'id' => $lab->id,
                 'name' => $lab->name,
-                'location' => $lab->location,
                 'capacity' => $lab->capacity,
                 'description' => $lab->description,
                 'status' => $lab->status,
@@ -130,7 +126,6 @@ class LabController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255', Rule::unique('labs')->ignore($lab->id)],
-            'location' => 'nullable|string|max:255',
             'capacity' => 'nullable|integer|min:1',
             'description' => 'nullable|string',
             'status' => ['required', Rule::in(['available', 'maintenance'])]

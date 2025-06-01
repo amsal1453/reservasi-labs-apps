@@ -14,7 +14,6 @@ import { EventContentArg } from '@fullcalendar/core';
 interface Lab {
     id: number;
     name: string;
-    location: string;
 }
 
 interface Lecturer {
@@ -145,7 +144,7 @@ export default function Index({ schedules, labs, selectedLab }: PageProps) {
                             <SelectContent>
                                 {labs.map((lab) => (
                                     <SelectItem key={lab.id} value={String(lab.id)}>
-                                        {lab.name} - {lab.location}
+                                        {lab.name}
                                     </SelectItem>
                                 ))}
                             </SelectContent>
@@ -157,7 +156,6 @@ export default function Index({ schedules, labs, selectedLab }: PageProps) {
                     <CardHeader className="pb-2">
                         <CardTitle>
                             {labs.find(lab => lab.id === selectedLab)?.name} -
-                            {labs.find(lab => lab.id === selectedLab)?.location}
                         </CardTitle>
                         <div className="flex space-x-2 mt-2">
                             <Badge

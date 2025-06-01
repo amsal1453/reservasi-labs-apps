@@ -29,7 +29,6 @@ import {
 interface Lab {
     id: number;
     name: string;
-    location: string | null;
     capacity: number | null;
     status: 'available' | 'maintenance';
     schedules_count: number;
@@ -94,7 +93,6 @@ export default function Index({ labs }: Props) {
                             <TableHeader>
                                 <TableRow>
                                     <TableHead>Nama</TableHead>
-                                    <TableHead>Lokasi</TableHead>
                                     <TableHead>Kapasitas</TableHead>
                                     <TableHead>Status</TableHead>
                                     <TableHead>Jadwal</TableHead>
@@ -106,7 +104,6 @@ export default function Index({ labs }: Props) {
                                 {labs.map((lab) => (
                                     <TableRow key={lab.id}>
                                         <TableCell className="font-medium">{lab.name}</TableCell>
-                                        <TableCell>{lab.location || '-'}</TableCell>
                                         <TableCell>{lab.capacity || '-'}</TableCell>
                                         <TableCell>{getStatusBadge(lab.status)}</TableCell>
                                         <TableCell>{lab.schedules_count}</TableCell>

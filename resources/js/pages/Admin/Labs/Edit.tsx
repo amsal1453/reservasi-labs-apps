@@ -14,7 +14,6 @@ type LabStatus = 'available' | 'maintenance';
 interface Lab {
     id: number;
     name: string;
-    location: string | null;
     capacity: number | null;
     description: string | null;
     status: LabStatus;
@@ -28,7 +27,6 @@ interface EditProps {
 export default function Edit({ lab, errors }: EditProps) {
     const { data, setData, put, processing } = useForm({
         name: lab.name,
-        location: lab.location || '',
         capacity: lab.capacity?.toString() || '',
         description: lab.description || '',
         status: lab.status as LabStatus,
@@ -68,16 +66,6 @@ export default function Edit({ lab, errors }: EditProps) {
                                     onChange={(e) => setData('name', e.target.value)}
                                 />
                                 <InputError message={errors.name} className="mt-2" />
-                            </div>
-
-                            <div>
-                                <Label htmlFor="location">Lokasi</Label>
-                                <Input
-                                    id="location"
-                                    value={data.location}
-                                    onChange={(e) => setData('location', e.target.value)}
-                                />
-                                <InputError message={errors.location} className="mt-2" />
                             </div>
 
                             <div>

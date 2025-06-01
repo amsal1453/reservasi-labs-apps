@@ -18,7 +18,6 @@ interface CreateProps {
 export default function Create({ errors }: CreateProps) {
     const { data, setData, post, processing } = useForm({
         name: '',
-        location: '',
         capacity: '',
         description: '',
         status: 'available' as LabStatus,
@@ -58,16 +57,6 @@ export default function Create({ errors }: CreateProps) {
                                     onChange={(e) => setData('name', e.target.value)}
                                 />
                                 <InputError message={errors.name} className="mt-2" />
-                            </div>
-
-                            <div>
-                                <Label htmlFor="location">Lokasi</Label>
-                                <Input
-                                    id="location"
-                                    value={data.location}
-                                    onChange={(e) => setData('location', e.target.value)}
-                                />
-                                <InputError message={errors.location} className="mt-2" />
                             </div>
 
                             <div>

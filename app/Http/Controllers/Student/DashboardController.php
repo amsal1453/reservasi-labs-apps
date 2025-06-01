@@ -19,7 +19,7 @@ class DashboardController extends Controller
 
         // Get upcoming reservations - using day and start_time instead of date
         $upcomingReservations = Reservation::where('user_id', $user->id)
-            ->with('lab:id,name,location')
+            ->with('lab:id,name')
             ->where('status', '!=', 'rejected') // Only show pending and approved
             ->orderBy('day', 'asc')
             ->orderBy('start_time', 'asc')
@@ -40,7 +40,7 @@ class DashboardController extends Controller
         // Get today's schedules
         $today = Carbon::now()->format('l'); // e.g., "Monday"
         $todaySchedules = Schedule::where('day', $today)
-            ->with('lab:id,name,location')
+            ->with('lab:id,name')
             ->orderBy('start_time', 'asc')
             ->limit(5)
             ->get()
