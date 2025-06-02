@@ -20,7 +20,7 @@ const mainNavItems: NavItem[] = [
     },
     {
         title: 'Jadwal',
-        href: '/admin/schedules',
+        href: '/admin/lab-manager',
         icon: Calendar,
     },
     {

@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\ScheduleController;
 use App\Http\Controllers\Admin\ReservationController;
 use App\Http\Controllers\Admin\NotificationController;
+use App\Http\Controllers\Admin\LabManagerController;
 
 Route::get('/', function () {
     return Inertia::render('welcome');
@@ -18,6 +19,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     })->name('dashboard');
 
     Route::resource('schedules', ScheduleController::class);
+
+    Route::get('lab-manager', [LabManagerController::class, 'index'])->name('lab-manager.index');
 
     Route::get('/reservations', [ReservationController::class, 'index'])->name('reservations.index');
     Route::get('/reservations/{reservation}', [ReservationController::class, 'show'])->name('reservations.show');

@@ -1,4 +1,4 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, useForm } from '@inertiajs/react';
 import { Plus } from 'lucide-react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
@@ -8,7 +8,13 @@ import idLocale from '@fullcalendar/core/locales/id';
 import AppLayout from '@/layouts/app-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import InputError from '@/components/input-error';
 import { type BreadcrumbItem } from '@/types';
+import { useState } from 'react';
 
 interface Schedule {
     id: number;
@@ -31,13 +37,36 @@ interface Schedule {
     };
 }
 
-interface Props {
-    schedules: Schedule[];
+interface Lecturer {
+    id: number;
+    name: string;
 }
 
-export default function Index({ schedules }: Props) {
+interface Props {
+    schedules: Schedule[];
+    lecturers?: Lecturer[];
+    selectedLab?: {
+        id: number;
+        name: string;
+    } | null;
+}
+
+export default function Index({ schedules, lecturers, selectedLab }: Props) {
+    const [isModalOpen, setIsModalOpen] = useState(false);
+
+    const { data, setData, post, processing, errors, reset } = useForm({
+        day: '',
+        start_time: '',
+        end_time: '',
+        course_name: '',
+        lecturer_name: '',
+        type: 'lecture',
+        lab_id: '1',
+    });
+
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Dashboard', href: route('admin.dashboard') },
+        { title: 'Lab', href: route('admin.lab-manager.index') },   
         { title: 'Jadwal', href: route('admin.schedules.index') },
     ];
 
@@ -80,19 +109,66 @@ export default function Index({ schedules }: Props) {
         };
     });
 
+    const handleDateClick = (info: { date: Date; dateStr: string }) => {
+        const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const clickedDate = new Date(info.date);
+        const day = dayNames[clickedDate.getDay()];
+        const startTime = info.dateStr.split('T')[1].slice(0, 5);
+        // Calculate end time (1 hour later)
+        const endTime = new Date(clickedDate.getTime() + 60 * 60 * 1000);
+        const endTimeStr = endTime.toTimeString().slice(0, 5);
+
+        setData({
+            day,
+            start_time: startTime,
+            end_time: endTimeStr,
+            course_name: '',
+            lecturer_name: '',
+            type: 'lecture',
+            lab_id: '1',
+        });
+        setIsModalOpen(true);
+    };
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        post(route('admin.schedules.store'), {
+            onSuccess: () => {
+                setIsModalOpen(false);
+                reset();
+            },
+        });
+    };
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Kelola Jadwal" />
 
             <div className="container py-6">
                 <div className="flex justify-between items-center mb-6">
-                    <h1 className="text-2xl font-bold">Kelola Jadwal</h1>
-                    <Link href={route('admin.schedules.create')}>
-                        <Button>
-                            <Plus className="w-4 h-4 mr-2" />
-                            Tambah Jadwal
-                        </Button>
-                    </Link>
+                    <div>
+                        <h1 className="text-2xl font-bold">Kelola Jadwal</h1>
+                        {selectedLab && (
+                            <p className="text-gray-600">
+                                Menampilkan jadwal untuk: <span className="font-medium">{selectedLab.name}</span>
+                            </p>
+                        )}
+                    </div>
+                    <div className="flex gap-3">
+                        {selectedLab && (
+                            <Link href={route('admin.lab-manager.index')}>
+                                <Button variant="outline">
+                                    Kembali ke Pilihan Lab
+                                </Button>
+                            </Link>
+                        )}
+                        <Link href={route('admin.schedules.create')}>
+                            <Button>
+                                <Plus className="w-4 h-4 mr-2" />
+                                Tambah Jadwal
+                            </Button>
+                        </Link>
+                    </div>
                 </div>
 
                 <Card>
@@ -115,6 +191,7 @@ export default function Index({ schedules }: Props) {
                                 slotMinTime="07:00:00"
                                 slotMaxTime="21:00:00"
                                 height="100%"
+                                dateClick={handleDateClick}
                                 eventTimeFormat={{
                                     hour: '2-digit',
                                     minute: '2-digit',
@@ -151,6 +228,113 @@ export default function Index({ schedules }: Props) {
                         </div>
                     </CardContent>
                 </Card>
+
+                <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Tambah Jadwal Baru</DialogTitle>
+                        </DialogHeader>
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div className="grid gap-4">
+                                <div className="grid gap-2">
+                                    <Label htmlFor="type">Tipe Jadwal</Label>
+                                    <Select
+                                        value={data.type}
+                                        onValueChange={(value) => setData('type', value as 'lecture' | 'reservation')}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Pilih tipe jadwal" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="lecture">Kuliah</SelectItem>
+                                            <SelectItem value="reservation">Reservasi</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <InputError message={errors.type} />
+                                </div>
+
+                                {data.type === 'lecture' && (
+                                    <>
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="course_name">Nama Mata Kuliah</Label>
+                                            <Input
+                                                id="course_name"
+                                                value={data.course_name}
+                                                onChange={(e) => setData('course_name', e.target.value)}
+                                                placeholder="Masukkan nama mata kuliah"
+                                            />
+                                            <InputError message={errors.course_name} />
+                                        </div>
+
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="lecturer_name">Nama Dosen</Label>
+                                            {lecturers && lecturers.length > 0 ? (
+                                                <Select
+                                                    value={data.lecturer_name}
+                                                    onValueChange={(value) => setData('lecturer_name', value)}
+                                                >
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Pilih dosen" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {lecturers.map((lecturer) => (
+                                                            <SelectItem key={lecturer.id} value={lecturer.name}>
+                                                                {lecturer.name}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            ) : (
+                                                <Input
+                                                    id="lecturer_name"
+                                                    value={data.lecturer_name}
+                                                    onChange={(e) => setData('lecturer_name', e.target.value)}
+                                                    placeholder="Masukkan nama dosen"
+                                                />
+                                            )}
+                                            <InputError message={errors.lecturer_name} />
+                                        </div>
+                                    </>
+                                )}
+
+                                <div className="grid gap-2">
+                                    <Label htmlFor="start_time">Waktu Mulai</Label>
+                                    <Input
+                                        id="start_time"
+                                        type="time"
+                                        value={data.start_time}
+                                        onChange={(e) => setData('start_time', e.target.value)}
+                                    />
+                                    <InputError message={errors.start_time} />
+                                </div>
+
+                                <div className="grid gap-2">
+                                    <Label htmlFor="end_time">Waktu Selesai</Label>
+                                    <Input
+                                        id="end_time"
+                                        type="time"
+                                        value={data.end_time}
+                                        onChange={(e) => setData('end_time', e.target.value)}
+                                    />
+                                    <InputError message={errors.end_time} />
+                                </div>
+                            </div>
+
+                            <DialogFooter>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => setIsModalOpen(false)}
+                                >
+                                    Batal
+                                </Button>
+                                <Button type="submit" disabled={processing}>
+                                    Simpan
+                                </Button>
+                            </DialogFooter>
+                        </form>
+                    </DialogContent>
+                </Dialog>
             </div>
         </AppLayout>
     );

@@ -13,10 +13,26 @@ use Illuminate\Support\Facades\Redirect;
 class ScheduleController extends Controller
 {
     // Tampilkan semua jadwal (kuliah dan reservasi disetujui)
-    public function index()
+    public function index(Request $request)
     {
-        $schedules = Schedule::with(['reservation', 'lab'])
-            ->orderBy('day')
+        // Get lab_id from request if provided
+        $labId = $request->input('lab_id');
+
+        // Get lab name if lab_id is provided
+        $selectedLab = null;
+        if ($labId) {
+            $selectedLab = Lab::find($labId);
+        }
+
+        // Query builder for schedules
+        $query = Schedule::with(['reservation', 'lab']);
+
+        // Filter by lab_id if provided
+        if ($labId) {
+            $query->where('lab_id', $labId);
+        }
+
+        $schedules = $query->orderBy('day')
             ->orderBy('start_time')
             ->get()
             ->map(function ($schedule) {
@@ -45,8 +61,18 @@ class ScheduleController extends Controller
                 ];
             });
 
+        $lecturers = User::role('lecturer')
+            ->select('id', 'name')
+            ->orderBy('name')
+            ->get();
+
         return Inertia::render('Admin/Schedules/Index', [
-            'schedules' => $schedules
+            'schedules' => $schedules,
+            'lecturers' => $lecturers,
+            'selectedLab' => $selectedLab ? [
+                'id' => $selectedLab->id,
+                'name' => $selectedLab->name
+            ] : null
         ]);
     }
 
