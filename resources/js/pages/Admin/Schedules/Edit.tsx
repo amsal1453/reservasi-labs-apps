@@ -17,6 +17,8 @@ interface ScheduleData {
     course_name: string;
     lecturer_name: string;
     lab_id: number;
+    repeat_weeks?: number;
+    group_id?: string | null;
 }
 
 interface Lab {
@@ -38,6 +40,7 @@ export default function Edit({ schedule, labs, errors }: EditProps) {
         course_name: schedule.course_name,
         lecturer_name: schedule.lecturer_name || '',
         lab_id: schedule.lab_id || '',
+        repeat_weeks: schedule.repeat_weeks || 1,
     });
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -85,6 +88,21 @@ export default function Edit({ schedule, labs, errors }: EditProps) {
                                         </SelectContent>
                                     </Select>
                                     <InputError message={errors.day} className="mt-2" />
+                                </div>
+                                <div>
+                                    <Label htmlFor="repeat_weeks">Pengulangan Mingguan</Label>
+                                    <Input
+                                        id="repeat_weeks"
+                                        type="number"
+                                        min="1"
+                                        max="16"
+                                        value={data.repeat_weeks}
+                                        onChange={(e) => setData('repeat_weeks', parseInt(e.target.value) || 1)}
+                                        disabled
+                                    />
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                        Pengulangan tidak dapat diubah setelah jadwal dibuat
+                                    </p>
                                 </div>
                             </div>
 

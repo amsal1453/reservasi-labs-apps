@@ -22,11 +22,13 @@ interface CreateProps {
 export default function Create({ labs, errors }: CreateProps) {
     const { data, setData, post, processing } = useForm({
         day: 'Monday',
+        schedule_date: new Date().toISOString().split('T')[0],
         start_time: '07:00',
         end_time: '09:00',
         course_name: '',
         lecturer_name: '',
         lab_id: labs[0]?.id || '',
+        repeat_weeks: 1,
     });
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -39,6 +41,9 @@ export default function Create({ labs, errors }: CreateProps) {
         { title: 'Jadwal', href: route('admin.schedules.index') },
         { title: 'Tambah Jadwal', href: route('admin.schedules.create') },
     ];
+
+    // Generate options for repeat weeks (1-16)
+    const repeatOptions = Array.from({ length: 16 }, (_, i) => i + 1);
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -74,6 +79,26 @@ export default function Create({ labs, errors }: CreateProps) {
                                         </SelectContent>
                                     </Select>
                                     <InputError message={errors.day} className="mt-2" />
+                                </div>
+                                <div>
+                                    <Label htmlFor="schedule_date">Tanggal Mulai</Label>
+                                    <Input
+                                        id="schedule_date"
+                                        type="date"
+                                        value={data.schedule_date}
+                                        onChange={(e) => {
+                                            // Update tanggal
+                                            setData('schedule_date', e.target.value);
+
+                                            // Update hari berdasarkan tanggal yang dipilih
+                                            const selectedDate = new Date(e.target.value);
+                                            const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                                            const day = dayNames[selectedDate.getDay()];
+                                            setData('day', day);
+                                        }}
+                                    />
+                                    <InputError message={errors.schedule_date} className="mt-2" />
+                                    <p className="text-xs text-muted-foreground mt-1">Tanggal pertama jadwal</p>
                                 </div>
                             </div>
 
@@ -149,6 +174,33 @@ export default function Create({ labs, errors }: CreateProps) {
                                     </SelectContent>
                                 </Select>
                                 <InputError message={errors.lab_id} className="mt-2" />
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <Label htmlFor="repeat_weeks">Pengulangan Mingguan</Label>
+                                    <Select
+                                        value={data.repeat_weeks.toString()}
+                                        onValueChange={(value) => setData('repeat_weeks', parseInt(value))}
+                                    >
+                                        <SelectTrigger id="repeat_weeks">
+                                            <SelectValue placeholder="Pilih Jumlah Minggu" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {repeatOptions.map((weeks) => (
+                                                <SelectItem key={weeks} value={weeks.toString()}>
+                                                    {weeks === 1 ? '1 minggu (tidak berulang)' : `${weeks} minggu`}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <InputError message={errors.repeat_weeks} className="mt-2" />
+                                    {!errors.repeat_weeks && data.repeat_weeks > 1 && (
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                            Jadwal akan dibuat untuk {data.repeat_weeks} minggu berturut-turut
+                                        </p>
+                                    )}
+                                </div>
                             </div>
 
                             {errors.conflict && (

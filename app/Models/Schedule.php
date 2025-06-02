@@ -12,6 +12,7 @@ class Schedule extends Model
 
     protected $fillable = [
         'day',
+        'schedule_date',
         'start_time',
         'end_time',
         'course_name',
@@ -19,7 +20,9 @@ class Schedule extends Model
         'lecturer_name',
         'type',
         'reservation_id',
-        'lab_id'
+        'lab_id',
+        'repeat_weeks',
+        'group_id'
     ];
 
     public function lecturer(): BelongsTo
