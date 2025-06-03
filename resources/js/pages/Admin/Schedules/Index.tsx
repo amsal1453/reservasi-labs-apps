@@ -1,5 +1,5 @@
 import { Head, Link, useForm, router } from '@inertiajs/react';
-import { Plus, Edit, Trash2 } from 'lucide-react';
+import { Plus, Edit, Trash2, Upload, Download } from 'lucide-react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
@@ -66,6 +66,9 @@ interface EventDetails {
 export default function Index({ schedules, selectedLab }: Props) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+    const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+    const [importFile, setImportFile] = useState<File | null>(null);
+    const [isImporting, setIsImporting] = useState(false);
     const [selectedEvent, setSelectedEvent] = useState<EventDetails | null>(null);
 
     const { data, setData, post, processing, errors, reset } = useForm({
@@ -229,6 +232,27 @@ export default function Index({ schedules, selectedLab }: Props) {
         }
     };
 
+    const handleImportSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!importFile) return;
+
+        const formData = new FormData();
+        formData.append('import_file', importFile);
+
+        setIsImporting(true);
+
+        router.post(route('admin.schedules.import'), formData, {
+            onSuccess: () => {
+                setIsImportModalOpen(false);
+                setImportFile(null);
+                setIsImporting(false);
+            },
+            onError: () => {
+                setIsImporting(false);
+            }
+        });
+    };
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Kelola Jadwal" />
@@ -251,6 +275,13 @@ export default function Index({ schedules, selectedLab }: Props) {
                                 </Button>
                             </Link>
                         )}
+                        <Button
+                            variant="outline"
+                            onClick={() => setIsImportModalOpen(true)}
+                        >
+                            <Upload className="w-4 h-4 mr-2" />
+                            Import Excel
+                        </Button>
                         <Link href={route('admin.schedules.create')}>
                             <Button>
                                 <Plus className="w-4 h-4 mr-2" />
@@ -546,6 +577,55 @@ export default function Index({ schedules, selectedLab }: Props) {
                                 </>
                             )}
                         </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+
+                <Dialog open={isImportModalOpen} onOpenChange={setIsImportModalOpen}>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Import Jadwal dari Excel</DialogTitle>
+                        </DialogHeader>
+                        <form onSubmit={handleImportSubmit} className="space-y-4">
+                            <div className="grid gap-4">
+                                <div className="grid gap-2">
+                                    <Label htmlFor="import_file">File Excel</Label>
+                                    <Input
+                                        id="import_file"
+                                        type="file"
+                                        accept=".xlsx,.xls,.csv"
+                                        onChange={(e) => setImportFile(e.target.files ? e.target.files[0] : null)}
+                                        required
+                                    />
+                                    <div className="mt-2">
+                                        <p className="text-sm text-muted-foreground mb-2">
+                                            Pastikan file Excel yang diupload sesuai dengan format template.
+                                            Jika belum memiliki template, silakan download template terlebih dahulu.
+                                        </p>
+                                        <a
+                                            href={route('admin.schedules.template.download')}
+                                            className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-blue-700 bg-blue-100 rounded-md hover:bg-blue-200 transition-colors"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                        >
+                                            <Download className="w-4 h-4 mr-2" />
+                                            Download Template Excel
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            <DialogFooter>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => setIsImportModalOpen(false)}
+                                >
+                                    Batal
+                                </Button>
+                                <Button type="submit" disabled={isImporting || !importFile}>
+                                    {isImporting ? 'Mengimport...' : 'Import'}
+                                </Button>
+                            </DialogFooter>
+                        </form>
                     </DialogContent>
                 </Dialog>
             </div>

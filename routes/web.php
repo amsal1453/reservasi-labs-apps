@@ -19,6 +19,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     })->name('dashboard');
 
     Route::resource('schedules', ScheduleController::class);
+    Route::post('schedules/import', [ScheduleController::class, 'import'])->name('schedules.import');
+    Route::get('schedules/template/download', [ScheduleController::class, 'downloadTemplate'])->name('schedules.template.download');
 
     Route::get('lab-manager', [LabManagerController::class, 'index'])->name('lab-manager.index');
 

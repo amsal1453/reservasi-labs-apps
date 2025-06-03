@@ -9,6 +9,9 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Str;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
 
 class ScheduleController extends Controller
 {
@@ -294,5 +297,242 @@ class ScheduleController extends Controller
 
         return Redirect::route('admin.schedules.index')
             ->with('message', $message);
+    }
+
+    // Import jadwal dari Excel
+    public function import(Request $request)
+    {
+        $request->validate([
+            'import_file' => 'required|file|mimes:xlsx,xls,csv|max:10240',
+        ]);
+
+        $file = $request->file('import_file');
+        $spreadsheet = IOFactory::load($file->getPathname());
+        $worksheet = $spreadsheet->getActiveSheet();
+        $rows = $worksheet->toArray();
+
+        // Hapus baris header
+        $header = array_shift($rows);
+
+        $successCount = 0;
+        $errors = [];
+
+        foreach ($rows as $index => $row) {
+            // Skip if empty row
+            if (empty(array_filter($row))) {
+                continue;
+            }
+
+            // Validate row data
+            $validator = Validator::make([
+                'day' => $row[0] ?? null,
+                'schedule_date' => $row[1] ?? null,
+                'start_time' => $row[2] ?? null,
+                'end_time' => $row[3] ?? null,
+                'course_name' => $row[4] ?? null,
+                'lecturer_name' => $row[5] ?? null,
+                'lab_id' => $row[6] ?? null,
+                'repeat_weeks' => $row[7] ?? 1,
+            ], [
+                'day' => 'required|in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday',
+                'schedule_date' => 'nullable|date',
+                'start_time' => 'required|date_format:H:i',
+                'end_time' => 'required|date_format:H:i|after:start_time',
+                'course_name' => 'required|string|max:255',
+                'lecturer_name' => 'required|string|max:255',
+                'lab_id' => 'required|exists:labs,id',
+                'repeat_weeks' => 'nullable|integer|min:1|max:16',
+            ]);
+
+            if ($validator->fails()) {
+                $errors[] = "Baris " . ($index + 2) . ": " . implode(", ", $validator->errors()->all());
+                continue;
+            }
+
+            $data = $validator->validated();
+            $repeat_weeks = $data['repeat_weeks'] ?? 1;
+
+            // Generate a group ID for related schedules
+            $group_id = null;
+            if ($repeat_weeks > 1) {
+                $group_id = (string) Str::uuid();
+            }
+
+            // Tentukan tanggal pertama jadwal
+            $firstDate = null;
+
+            // Jika ada schedule_date yang dikirim, gunakan itu sebagai tanggal pertama
+            if (!empty($data['schedule_date'])) {
+                $firstDate = \Carbon\Carbon::parse($data['schedule_date']);
+            }
+            // Jika tidak ada schedule_date, hitung berdasarkan hari
+            else {
+                // Map day name to day number (0 = Sunday, 1 = Monday, etc.)
+                $dayMap = [
+                    'Sunday' => 0,
+                    'Monday' => 1,
+                    'Tuesday' => 2,
+                    'Wednesday' => 3,
+                    'Thursday' => 4,
+                    'Friday' => 5,
+                    'Saturday' => 6,
+                ];
+
+                $dayNumber = $dayMap[$data['day']];
+                $today = now();
+
+                // Mendapatkan tanggal hari ini
+                $currentDayOfWeek = $today->dayOfWeek; // 0 = Sunday, 1 = Monday, etc.
+
+                // Menghitung berapa hari ke depan untuk mencapai hari yang dipilih
+                $daysUntilScheduleDay = ($dayNumber - $currentDayOfWeek + 7) % 7;
+
+                // Jika hasilnya 0 (hari yang sama), tetap tambahkan 7 hari ke depan
+                if ($daysUntilScheduleDay === 0) {
+                    $daysUntilScheduleDay = 7;
+                }
+
+                // Mendapatkan tanggal pertama jadwal
+                $firstDate = $today->copy()->addDays($daysUntilScheduleDay);
+            }
+
+            // Cek jadwal bentrok untuk semua minggu
+            $hasConflict = false;
+
+            for ($week = 0; $week < $repeat_weeks; $week++) {
+                // Menghitung tanggal aktual untuk minggu ini
+                $scheduleDate = $firstDate->copy()->addWeeks($week)->toDateString();
+
+                $conflict = Schedule::where(function ($query) use ($data, $scheduleDate) {
+                    // Cek berdasarkan tanggal jadwal + jam yang sama
+                    $query->where('schedule_date', $scheduleDate)
+                        ->where('lab_id', $data['lab_id'])
+                        ->where(function ($q) use ($data) {
+                            $q->where('start_time', '<', $data['end_time'])
+                                ->where('end_time', '>', $data['start_time']);
+                        });
+                })->exists();
+
+                if ($conflict) {
+                    $hasConflict = true;
+                    $errors[] = "Baris " . ($index + 2) . ": Jadwal bentrok pada tanggal " . date('d-m-Y', strtotime($scheduleDate));
+                    break;
+                }
+            }
+
+            // Jika ada konflik, lewati jadwal ini
+            if ($hasConflict) {
+                continue;
+            }
+
+            // Membuat jadwal untuk setiap minggu
+            for ($week = 0; $week < $repeat_weeks; $week++) {
+                // Menghitung tanggal jadwal untuk minggu ini
+                $scheduleDate = $firstDate->copy()->addWeeks($week);
+                $dateString = $scheduleDate->toDateString(); // Format: Y-m-d
+
+                // Membuat jadwal di database
+                Schedule::create([
+                    'day' => $data['day'],
+                    'schedule_date' => $dateString,
+                    'start_time' => $data['start_time'],
+                    'end_time' => $data['end_time'],
+                    'course_name' => $data['course_name'],
+                    'lecturer_name' => $data['lecturer_name'],
+                    'lab_id' => $data['lab_id'],
+                    'type' => 'lecture',
+                    'repeat_weeks' => $repeat_weeks,
+                    'group_id' => $group_id
+                ]);
+
+                $successCount++;
+            }
+        }
+
+        if (count($errors) > 0) {
+            return Redirect::route('admin.schedules.index')
+                ->with('message', "Berhasil mengimpor {$successCount} jadwal")
+                ->with('errors', $errors);
+        }
+
+        return Redirect::route('admin.schedules.index')
+            ->with('message', "Berhasil mengimpor {$successCount} jadwal");
+    }
+
+    // Download template Excel untuk import jadwal
+    public function downloadTemplate()
+    {
+        // Create new spreadsheet
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        // Set headers
+        $headers = [
+            'Hari (Monday, Tuesday, etc)',
+            'Tanggal (YYYY-MM-DD, opsional)',
+            'Waktu Mulai (HH:MM)',
+            'Waktu Selesai (HH:MM)',
+            'Nama Mata Kuliah',
+            'Nama Dosen',
+            'Lab ID',
+            'Jumlah Minggu Berulang (1-16)'
+        ];
+
+        // Apply headers
+        for ($i = 0; $i < count($headers); $i++) {
+            $column = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($i);
+            $sheet->setCellValue($column . '1', $headers[$i]);
+
+            // Make headers bold
+            $sheet->getStyle($column . '1')->getFont()->setBold(true);
+
+            // Auto width columns
+            $sheet->getColumnDimension($column)->setAutoSize(true);
+        }
+
+        // Add sample data
+        $sampleData = [
+            ['Monday', '2023-09-01', '08:00', '09:40', 'Pemrograman Web', 'Dr. John Doe', '1', '16'],
+            ['Tuesday', '', '10:00', '11:40', 'Algoritma dan Struktur Data', 'Dr. Jane Smith', '2', '1'],
+            ['Wednesday', '2023-09-03', '13:00', '14:40', 'Basis Data', 'Prof. Robert Johnson', '3', '8']
+        ];
+
+        // Add sample data to sheet
+        $row = 2;
+        foreach ($sampleData as $data) {
+            for ($i = 0; $i < count($data); $i++) {
+                $column = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($i);
+                $sheet->setCellValue($column . $row, $data[$i]);
+            }
+            $row++;
+        }
+
+        // Add list of labs for reference
+        $sheet->setCellValue('A' . ($row + 2), 'Daftar Lab:');
+        $sheet->getStyle('A' . ($row + 2))->getFont()->setBold(true);
+
+        $labs = Lab::select('id', 'name')->get();
+        $row += 3;
+        $sheet->setCellValue('A' . $row, 'ID');
+        $sheet->setCellValue('B' . $row, 'Nama Lab');
+        $sheet->getStyle('A' . $row . ':B' . $row)->getFont()->setBold(true);
+
+        foreach ($labs as $lab) {
+            $row++;
+            $sheet->setCellValue('A' . $row, $lab->id);
+            $sheet->setCellValue('B' . $row, $lab->name);
+        }
+
+        // Create writer
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+
+        // Set headers for download
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment;filename="template_import_jadwal.xlsx"');
+        header('Cache-Control: max-age=0');
+
+        // Save file to output
+        $writer->save('php://output');
+        exit;
     }
 }
