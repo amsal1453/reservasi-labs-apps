@@ -10,13 +10,23 @@ interface AuthLayoutProps {
 
 export default function AuthSimpleLayout({ children, title, description }: PropsWithChildren<AuthLayoutProps>) {
     return (
-        <div className="bg-background flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
-            <div className="w-full max-w-sm">
-                <div className="flex flex-col gap-8">
+        <div
+            className="bg-background flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10 relative"
+            style={{
+                backgroundImage: 'url(/background.jpg)',
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat',
+            }}
+        >
+            {/* Overlay gelap transparan tanpa blur */}
+            <div className="absolute inset-0 bg-black/40 z-0" />
+            <div className="w-full max-w-sm relative z-10">
+                <div className="flex flex-col gap-8 bg-white/20 rounded-2xl shadow-xl p-10 border border-white/30 backdrop-blur-md">
                     <div className="flex flex-col items-center gap-4">
                         <Link href={route('home')} className="flex flex-col items-center gap-2 font-medium">
-                            <div className="mb-1 flex h-9 w-9 items-center justify-center rounded-md">
-                                <AppLogoIcon className="size-9 fill-current text-[var(--foreground)] dark:text-white" />
+                            <div className="mb-1 flex items-center justify-center">
+                                <img src="/logouui.png" alt="Logo UUI" className="h-20 w-20 object-contain" />
                             </div>
                             <span className="sr-only">{title}</span>
                         </Link>
