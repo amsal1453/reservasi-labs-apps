@@ -18,61 +18,53 @@ class ScheduleController extends Controller
     // Tampilkan semua jadwal (kuliah dan reservasi disetujui)
     public function index(Request $request)
     {
-        // Get lab_id from request if provided
-        $labId = $request->input('lab_id');
+        $labs = Lab::all();
 
-        // Get lab name if lab_id is provided
-        $selectedLab = null;
-        if ($labId) {
-            $selectedLab = Lab::find($labId);
-        }
+        $selectedLab = $request->input('lab_id', $labs->first()?->id); // default: lab pertama
 
-        // Query builder for schedules
-        $query = Schedule::with(['reservation', 'lab']);
-
-        // Filter by lab_id if provided
-        if ($labId) {
-            $query->where('lab_id', $labId);
-        }
-
-        $schedules = $query->orderBy('schedule_date')
+        // Ambil jadwal dari tabel Schedule
+        $schedules = Schedule::with(['lab', 'reservation', 'lecturer'])
+            ->where('lab_id', $selectedLab)
+            ->orderBy('day')
             ->orderBy('start_time')
-            ->get()
-            ->map(function ($schedule) {
-                return [
-                    'id' => $schedule->id,
-                    'day' => $schedule->day,
-                'schedule_date' => $schedule->schedule_date,
-                    'start_time' => $schedule->start_time,
-                    'end_time' => $schedule->end_time,
-                    'course_name' => $schedule->course_name,
-                'lab' => $schedule->lab ? [
-                    'id' => $schedule->lab->id,
-                    'name' => $schedule->lab->name,
-                ] : null,
-                    'type' => $schedule->type,
-                'lecturer' => $schedule->lecturer_id ? [
-                    'id' => $schedule->lecturer_id,
-                    'name' => $schedule->lecturer ? $schedule->lecturer->name : $schedule->lecturer_name,
-                ] : [
-                    'id' => null,
-                    'name' => $schedule->lecturer_name,
-                ],
-                    'reservation' => $schedule->reservation ? [
-                        'id' => $schedule->reservation->id,
-                        'status' => $schedule->reservation->status,
-                    ] : null,
-                'group_id' => $schedule->group_id,
-                'repeat_weeks' => $schedule->repeat_weeks,
-                ];
-            });
+            ->get();
+
+        // Ambil reservasi yang disetujui tapi belum ada di jadwal
+        $approvedReservations = \App\Models\Reservation::with(['lab', 'user'])
+            ->where('status', 'approved')
+            ->where('lab_id', $selectedLab)
+            ->whereDoesntHave('schedule')
+            ->get();
+
+        // Konversi reservasi menjadi format jadwal
+        $reservationSchedules = $approvedReservations->map(function ($reservation) {
+            // Tentukan hari dari tanggal
+            $date = \Carbon\Carbon::parse($reservation->date);
+            $day = $date->format('l'); // Monday, Tuesday, etc.
+
+            return [
+                'id' => $reservation->id,
+                'day' => $day,
+                'schedule_date' => $reservation->date,
+                'start_time' => $reservation->start_time,
+                'end_time' => $reservation->end_time,
+                'lab_id' => $reservation->lab_id,
+                'lab' => $reservation->lab,
+                'lecturer_id' => null,
+                'lecturer' => null,
+                'reservation_id' => $reservation->id,
+                'reservation' => $reservation,
+                'type' => 'reservation',
+                'subject' => $reservation->purpose,
+            ];
+        });
+
+        // Gabungkan jadwal reguler dengan reservasi
+        $allSchedules = $schedules->concat($reservationSchedules);
 
         return Inertia::render('Admin/Schedules/Index', [
-            'schedules' => $schedules,
-            'selectedLab' => $selectedLab ? [
-                'id' => $selectedLab->id,
-                'name' => $selectedLab->name
-            ] : null,
+            'schedules' => $allSchedules,
+            'selectedLab' => $selectedLab,
             'message' => session('message'),
             'import_errors' => session('import_errors'),
         ]);

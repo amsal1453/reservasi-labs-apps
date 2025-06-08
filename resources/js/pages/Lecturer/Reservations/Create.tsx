@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { FormError } from '@/components/form-error';
+import { InputError } from '@/components/input-error';
 
 interface Lab {
     id: number;
@@ -25,6 +26,7 @@ export default function Create({ labs }: PageProps) {
     const { data, setData, post, processing, errors } = useForm({
         lab_id: '',
         day: '',
+        date: '',
         start_time: '',
         end_time: '',
         purpose: '',
@@ -82,24 +84,47 @@ export default function Create({ labs }: PageProps) {
                                 <FormError message={errors.lab_id} />
                             </div>
 
-                            <div className="space-y-2">
-                                <Label htmlFor="day">Hari</Label>
-                                <Select
-                                    value={data.day}
-                                    onValueChange={(value) => setData('day', value)}
-                                >
-                                    <SelectTrigger id="day">
-                                        <SelectValue placeholder="Pilih Hari" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {days.map((day) => (
-                                            <SelectItem key={day} value={day}>
-                                                {day}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                <FormError message={errors.day} />
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                <div>
+                                    <Label htmlFor="day">Hari</Label>
+                                    <Select
+                                        value={data.day}
+                                        onValueChange={(value) => setData('day', value)}
+                                    >
+                                        <SelectTrigger id="day">
+                                            <SelectValue placeholder="Pilih hari" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="Monday">Senin</SelectItem>
+                                            <SelectItem value="Tuesday">Selasa</SelectItem>
+                                            <SelectItem value="Wednesday">Rabu</SelectItem>
+                                            <SelectItem value="Thursday">Kamis</SelectItem>
+                                            <SelectItem value="Friday">Jumat</SelectItem>
+                                            <SelectItem value="Saturday">Sabtu</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <InputError message={errors.day} />
+                                </div>
+
+                                <div>
+                                    <Label htmlFor="date">Tanggal</Label>
+                                    <Input
+                                        id="date"
+                                        type="date"
+                                        value={data.date}
+                                        onChange={(e) => {
+                                            setData('date', e.target.value);
+                                            if (e.target.value) {
+                                                const selectedDate = new Date(e.target.value);
+                                                const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                                                const dayName = days[selectedDate.getDay()];
+                                                setData('day', dayName);
+                                            }
+                                        }}
+                                        className="block w-full"
+                                    />
+                                    <InputError message={errors.date} />
+                                </div>
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">

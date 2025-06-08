@@ -95,10 +95,21 @@ export default function Index({ schedules, labs, selectedLab }: PageProps) {
                 type: schedule.reservation ? 'reservation' : 'lecture',
                 lab: schedule.lab.name,
                 group_id: schedule.group_id,
-                repeat_weeks: schedule.repeat_weeks || 1
+                repeat_weeks: schedule.repeat_weeks || 1,
+                status: schedule.reservation?.status || null
             },
-            backgroundColor: schedule.reservation ? '#10b981' : '#3b82f6',
-            borderColor: schedule.reservation ? '#059669' : '#2563eb'
+            backgroundColor: schedule.reservation
+                ? schedule.reservation.status === 'approved' ? '#10b981'
+                    : schedule.reservation.status === 'pending' ? '#f59e0b'
+                        : schedule.reservation.status === 'rejected' ? '#ef4444'
+                            : '#10b981'
+                : '#3b82f6',
+            borderColor: schedule.reservation
+                ? schedule.reservation.status === 'approved' ? '#059669'
+                    : schedule.reservation.status === 'pending' ? '#d97706'
+                        : schedule.reservation.status === 'rejected' ? '#dc2626'
+                            : '#059669'
+                : '#2563eb'
         };
     });
 
@@ -146,6 +157,24 @@ export default function Index({ schedules, labs, selectedLab }: PageProps) {
                 <Card>
                     <CardHeader>
                         <CardTitle>Daftar Jadwal</CardTitle>
+                        <div className="flex flex-wrap gap-2 mt-3">
+                            <div className="flex items-center gap-1">
+                                <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                                <span className="text-xs">Kuliah</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                                <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                                <span className="text-xs">Reservasi Disetujui</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                                <div className="w-3 h-3 rounded-full bg-amber-500"></div>
+                                <span className="text-xs">Reservasi Menunggu</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                                <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                                <span className="text-xs">Reservasi Ditolak</span>
+                            </div>
+                        </div>
                     </CardHeader>
                     <CardContent>
                         <div className="h-[700px]">
@@ -220,9 +249,19 @@ export default function Index({ schedules, labs, selectedLab }: PageProps) {
                                             <div className="mt-1">
                                                 <span className={`inline-flex items-center rounded px-1 py-0.5 text-xs ${eventInfo.event.extendedProps.type === 'lecture'
                                                     ? 'bg-blue-100 text-blue-700'
-                                                    : 'bg-green-100 text-green-700'
+                                                    : eventInfo.event.extendedProps.status === 'approved'
+                                                        ? 'bg-green-100 text-green-700'
+                                                        : eventInfo.event.extendedProps.status === 'pending'
+                                                            ? 'bg-amber-100 text-amber-700'
+                                                            : eventInfo.event.extendedProps.status === 'rejected'
+                                                                ? 'bg-red-100 text-red-700'
+                                                                : 'bg-green-100 text-green-700'
                                                     }`}>
-                                                    {eventInfo.event.extendedProps.type === 'lecture' ? 'Kuliah' : 'Reservasi'}
+                                                    {eventInfo.event.extendedProps.type === 'lecture' ? 'Kuliah' :
+                                                        eventInfo.event.extendedProps.status === 'approved' ? 'Reservasi Disetujui' :
+                                                            eventInfo.event.extendedProps.status === 'pending' ? 'Reservasi Menunggu' :
+                                                                eventInfo.event.extendedProps.status === 'rejected' ? 'Reservasi Ditolak' : 'Reservasi'
+                                                    }
                                                 </span>
                                             </div>
                                         </div>

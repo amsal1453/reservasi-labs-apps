@@ -41,11 +41,12 @@ class ReservationController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'day'         => 'required|in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday',
-            'start_time'  => 'required|date_format:H:i',
-            'end_time'    => 'required|date_format:H:i|after:start_time',
-            'purpose'     => 'required|string|max:255',
-            'lab_id'      => 'required|exists:labs,id',
+            'day'           => 'required|in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday',
+            'date'          => 'required|date|date_format:Y-m-d',
+            'start_time'    => 'required|date_format:H:i',
+            'end_time'      => 'required|date_format:H:i|after:start_time',
+            'purpose'       => 'required|string|max:255',
+            'lab_id'        => 'required|exists:labs,id',
         ]);
 
         // Cek bentrok reservasi/lab
@@ -65,13 +66,14 @@ class ReservationController extends Controller
         }
 
         Reservation::create([
-            'user_id'    => Auth::id(),
-            'day'        => $request->day,
-            'start_time' => $request->start_time,
-            'end_time'   => $request->end_time,
-            'purpose'    => $request->purpose,
-            'lab_id'     => $request->lab_id,
-            'status'     => 'pending',
+            'user_id'       => Auth::id(),
+            'day'           => $request->day,
+            'date'          => $request->date,
+            'start_time'    => $request->start_time,
+            'end_time'      => $request->end_time,
+            'purpose'       => $request->purpose,
+            'lab_id'        => $request->lab_id,
+            'status'        => 'pending',
         ]);
 
         return redirect()->route('student.reservations.index')
