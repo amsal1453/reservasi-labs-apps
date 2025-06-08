@@ -48,6 +48,8 @@ interface Props {
         id: number;
         name: string;
     } | null;
+    import_errors?: string[];
+    message?: string;
 }
 
 interface EventDetails {
@@ -63,7 +65,7 @@ interface EventDetails {
     current_recurrence?: number;
 }
 
-export default function Index({ schedules, selectedLab }: Props) {
+export default function Index({ schedules, selectedLab, import_errors, message }: Props) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -258,6 +260,23 @@ export default function Index({ schedules, selectedLab }: Props) {
             <Head title="Kelola Jadwal" />
 
             <div className="container py-6">
+                {message && (
+                    <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+                        <p>{message}</p>
+                    </div>
+                )}
+
+                {import_errors && import_errors.length > 0 && (
+                    <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded mb-4">
+                        <p className="font-bold mb-2">Ada beberapa error saat mengimpor jadwal:</p>
+                        <ul className="list-disc pl-5">
+                            {import_errors.map((error, index) => (
+                                <li key={index}>{error}</li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
+
                 <div className="flex justify-between items-center mb-6">
                     <div>
                         <h1 className="text-2xl font-bold">Kelola Jadwal</h1>

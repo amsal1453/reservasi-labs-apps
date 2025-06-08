@@ -1,15 +1,14 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Head } from '@inertiajs/react';
 import LecturerLayout from '@/layouts/LecturerLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
-import { EventContentArg } from '@fullcalendar/core';
+import idLocale from '@fullcalendar/core/locales/id';
 
 interface Lab {
     id: number;
@@ -31,6 +30,7 @@ interface Reservation {
 interface Schedule {
     id: number;
     day: string;
+    schedule_date: string; // Format YYYY-MM-DD
     start_time: string;
     end_time: string;
     lab_id: number;
@@ -41,6 +41,8 @@ interface Schedule {
     reservation: Reservation | null;
     type: string;
     subject: string | null;
+    group_id?: string | null;
+    repeat_weeks?: number;
 }
 
 interface PageProps {
@@ -49,76 +51,59 @@ interface PageProps {
     selectedLab: number;
 }
 
-interface CustomEventExtendedProps {
-    lecturer?: string;
-    type: 'reservation' | 'class' | string;
-}
-
 export default function Index({ schedules, labs, selectedLab }: PageProps) {
-    const [calendarView, setCalendarView] = useState<'timeGridWeek' | 'dayGridMonth'>('timeGridWeek');
-
     // Convert schedules to FullCalendar events
-    const calendarEvents = schedules.map(schedule => {
-        // Extract date part from the day name (assuming we need to map to current week)
-        const today = new Date();
-        const dayIndex = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].indexOf(schedule.day);
-        const currentDayIndex = today.getDay();
-        const diff = dayIndex - currentDayIndex;
+    const events = schedules.map(schedule => {
+        // Use schedule_date if available, otherwise calculate based on day
+        let dateStr = schedule.schedule_date;
 
-        const eventDate = new Date(today);
-        eventDate.setDate(today.getDate() + diff);
+        // If no schedule_date, calculate based on day
+        if (!dateStr) {
+            // Map day name to day number (0 = Sunday, 1 = Monday, etc.)
+            const dayMap: Record<string, number> = {
+                'Sunday': 0,
+                'Monday': 1,
+                'Tuesday': 2,
+                'Wednesday': 3,
+                'Thursday': 4,
+                'Friday': 5,
+                'Saturday': 6
+            };
 
-        // Format the date as YYYY-MM-DD
-        const dateStr = eventDate.toISOString().split('T')[0];
+            // Create a date for the current week with the day of the schedule
+            const dayNumber = dayMap[schedule.day];
+            const today = new Date();
+            const currentDayOfWeek = today.getDay();
+            const daysUntilScheduleDay = (dayNumber - currentDayOfWeek + 7) % 7;
+            const scheduleDate = new Date(today);
+            scheduleDate.setDate(today.getDate() + daysUntilScheduleDay);
+
+            // Format the date as YYYY-MM-DD
+            dateStr = scheduleDate.toISOString().split('T')[0];
+        }
 
         // Create event object
         return {
-            id: String(schedule.id),
+            id: schedule.id.toString(),
             title: schedule.reservation
                 ? `Reservasi: ${schedule.reservation.purpose}`
-                : schedule.type === 'class'
-                    ? `Kelas: ${schedule.subject}`
-                    : schedule.type,
+                : schedule.subject || 'Kuliah',
             start: `${dateStr}T${schedule.start_time}`,
             end: `${dateStr}T${schedule.end_time}`,
             extendedProps: {
                 lecturer: schedule.lecturer?.name,
-                type: schedule.reservation ? 'reservation' : schedule.type
+                type: schedule.reservation ? 'reservation' : 'lecture',
+                lab: schedule.lab.name,
+                group_id: schedule.group_id,
+                repeat_weeks: schedule.repeat_weeks || 1
             },
-            backgroundColor: schedule.reservation
-                ? '#93c5fd' // blue-300
-                : schedule.type === 'class'
-                    ? '#86efac' // green-300
-                    : '#d1d5db', // gray-300
-            borderColor: schedule.reservation
-                ? '#3b82f6' // blue-500
-                : schedule.type === 'class'
-                    ? '#22c55e' // green-500
-                    : '#6b7280', // gray-500
-            textColor: '#1e293b', // slate-800
+            backgroundColor: schedule.reservation ? '#10b981' : '#3b82f6',
+            borderColor: schedule.reservation ? '#059669' : '#2563eb'
         };
     });
 
     const handleLabChange = (labId: string) => {
         window.location.href = route('lecturer.lab-schedules.index', { lab_id: labId });
-    };
-
-    const handleEventContent = (eventInfo: EventContentArg) => {
-        const extendedProps = eventInfo.event.extendedProps as CustomEventExtendedProps;
-
-        return (
-            <div className="p-1 text-xs">
-                <div className="font-semibold">{eventInfo.event.title}</div>
-                <div className="mt-1">
-                    {eventInfo.timeText}
-                </div>
-                {extendedProps.lecturer && (
-                    <div className="text-xs">
-                        Dosen: {extendedProps.lecturer}
-                    </div>
-                )}
-            </div>
-        );
     };
 
     return (
@@ -128,10 +113,16 @@ export default function Index({ schedules, labs, selectedLab }: PageProps) {
         ]}>
             <Head title="Jadwal Lab" />
 
-            <div className="mb-6">
-                <div className="flex items-center justify-between mb-4">
-                    <h1 className="text-xl font-semibold">Jadwal Laboratorium</h1>
-
+            <div className="container py-6">
+                <div className="flex justify-between items-center mb-6">
+                    <div>
+                        <h1 className="text-2xl font-bold">Jadwal Laboratorium</h1>
+                        {labs.find(lab => lab.id === selectedLab) && (
+                            <p className="text-gray-600">
+                                Menampilkan jadwal untuk: <span className="font-medium">{labs.find(lab => lab.id === selectedLab)?.name}</span>
+                            </p>
+                        )}
+                    </div>
                     <div className="w-64">
                         <Label htmlFor="lab-select" className="mb-1 block">Pilih Lab</Label>
                         <Select
@@ -153,46 +144,90 @@ export default function Index({ schedules, labs, selectedLab }: PageProps) {
                 </div>
 
                 <Card>
-                    <CardHeader className="pb-2">
-                        <CardTitle>
-                            {labs.find(lab => lab.id === selectedLab)?.name} -
-                        </CardTitle>
-                        <div className="flex space-x-2 mt-2">
-                            <Badge
-                                variant="outline"
-                                className="bg-blue-100 text-blue-800 cursor-pointer"
-                                onClick={() => setCalendarView('timeGridWeek')}
-                            >
-                                Week View
-                            </Badge>
-                            <Badge
-                                variant="outline"
-                                className="bg-green-100 text-green-800 cursor-pointer"
-                                onClick={() => setCalendarView('dayGridMonth')}
-                            >
-                                Month View
-                            </Badge>
-                        </div>
+                    <CardHeader>
+                        <CardTitle>Daftar Jadwal</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="h-[600px]">
+                        <div className="h-[700px]">
                             <FullCalendar
                                 plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-                                initialView={calendarView}
+                                initialView="timeGridWeek"
                                 headerToolbar={{
                                     left: 'prev,next today',
                                     center: 'title',
-                                    right: 'timeGridWeek,dayGridMonth'
+                                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
                                 }}
-                                events={calendarEvents}
-                                eventContent={handleEventContent}
-                                slotMinTime="07:00:00"
-                                slotMaxTime="18:00:00"
+                                events={events}
+                                locale={idLocale}
                                 allDaySlot={false}
-                                weekends={true}
+                                slotMinTime="07:00:00"
+                                slotMaxTime="21:00:00"
                                 height="100%"
-                                locale="id"
-                                firstDay={1} // Monday as first day
+                                eventTimeFormat={{
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                    hour12: false
+                                }}
+                                eventDisplay="block"
+                                displayEventEnd={true}
+                                editable={false}
+                                views={{
+                                    timeGridWeek: {
+                                        dayMaxEventRows: true
+                                    },
+                                    dayGridMonth: {
+                                        dayMaxEventRows: 3
+                                    }
+                                }}
+                                eventContent={(eventInfo) => {
+                                    // Get event information
+                                    const title = eventInfo.event.title.split(' - ')[0];
+                                    const isMonthView = eventInfo.view.type === 'dayGridMonth';
+                                    const groupId = eventInfo.event.extendedProps.group_id;
+                                    const isRepeating = groupId && eventInfo.event.extendedProps.repeat_weeks > 1;
+
+                                    // Simplified display for month view
+                                    if (isMonthView) {
+                                        return (
+                                            <div className="text-xs p-1">
+                                                <div className="font-medium truncate">
+                                                    {title}
+                                                </div>
+                                                {eventInfo.event.extendedProps.lecturer && (
+                                                    <div className="text-xs opacity-75 truncate">
+                                                        {eventInfo.event.extendedProps.lecturer}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    }
+
+                                    // Detailed display for week/day view
+                                    return (
+                                        <div className="p-1">
+                                            <div className="flex justify-between items-center mb-1">
+                                                <span className="font-bold text-xs">{eventInfo.timeText}</span>
+                                                {isRepeating && (
+                                                    <span className="text-xs bg-white bg-opacity-25 rounded px-1">
+                                                        Berulang
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <div className="font-medium text-xs truncate">{title}</div>
+                                            <div className="text-xs truncate">
+                                                {eventInfo.event.extendedProps.lecturer}
+                                            </div>
+                                            <div className="mt-1">
+                                                <span className={`inline-flex items-center rounded px-1 py-0.5 text-xs ${eventInfo.event.extendedProps.type === 'lecture'
+                                                    ? 'bg-blue-100 text-blue-700'
+                                                    : 'bg-green-100 text-green-700'
+                                                    }`}>
+                                                    {eventInfo.event.extendedProps.type === 'lecture' ? 'Kuliah' : 'Reservasi'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    );
+                                }}
                             />
                         </div>
                     </CardContent>

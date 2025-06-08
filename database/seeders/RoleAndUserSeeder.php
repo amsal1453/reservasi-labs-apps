@@ -44,7 +44,7 @@ class RoleAndUserSeeder extends Seeder
 
         // 4. Buat Mahasiswa
         $student = User::firstOrCreate(
-            ['email' => 'mahasiswa@student.kampus.ac.id'],
+            ['email' => '   '],
             [
                 'name' => 'Student User',
                 'nim_nip' => 'nim2023001',
