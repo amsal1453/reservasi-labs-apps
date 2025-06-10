@@ -39,6 +39,7 @@ class ReservationController extends Controller
     {
         $request->validate([
             'day'         => 'required|in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday',
+            'date'        => 'required|date',
             'start_time'  => 'required|date_format:H:i',
             'end_time'    => 'required|date_format:H:i|after:start_time',
             'purpose'     => 'required|string|max:255',
@@ -64,6 +65,7 @@ class ReservationController extends Controller
         Reservation::create([
             'user_id'    => Auth::id(),
             'day'        => $request->day,
+            'date'       => $request->date,
             'start_time' => $request->start_time,
             'end_time'   => $request->end_time,
             'purpose'    => $request->purpose,
@@ -81,7 +83,7 @@ class ReservationController extends Controller
         abort_if($reservation->user_id !== Auth::id(), 403);
 
         return Inertia::render('Lecturer/Reservations/Show', [
-            'reservation' => $reservation->load('lab'),
+            'reservation' => $reservation->load(['lab', 'user']),
         ]);
     }
 
@@ -93,7 +95,7 @@ class ReservationController extends Controller
         $labs = Lab::where('status', 'available')->get();
 
         return Inertia::render('Lecturer/Reservations/Edit', [
-            'reservation' => $reservation->load('lab'),
+            'reservation' => $reservation->load(['lab', 'user']),
             'labs' => $labs,
         ]);
     }
@@ -105,6 +107,7 @@ class ReservationController extends Controller
 
         $request->validate([
             'day'         => 'required|in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday',
+            'date'        => 'required|date',
             'start_time'  => 'required|date_format:H:i',
             'end_time'    => 'required|date_format:H:i|after:start_time',
             'purpose'     => 'required|string|max:255',
@@ -130,6 +133,7 @@ class ReservationController extends Controller
 
         $reservation->update([
             'day'        => $request->day,
+            'date'       => $request->date,
             'start_time' => $request->start_time,
             'end_time'   => $request->end_time,
             'purpose'    => $request->purpose,

@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { FormError } from '@/components/form-error';
-import { InputError } from '@/components/input-error';
+import InputError from '@/components/input-error';
 
 interface Lab {
     id: number;
@@ -37,14 +37,32 @@ export default function Create({ labs }: PageProps) {
         post(route('lecturer.reservations.store'));
     };
 
-    const days = [
-        'Monday',
-        'Tuesday',
-        'Wednesday',
-        'Thursday',
-        'Friday',
-        'Saturday',
-    ];
+    // Function to convert English day names to Indonesian
+    const translateDayToIndonesian = (day: string): string => {
+        const dayTranslations: Record<string, string> = {
+            'Monday': 'Senin',
+            'Tuesday': 'Selasa',
+            'Wednesday': 'Rabu',
+            'Thursday': 'Kamis',
+            'Friday': 'Jumat',
+            'Saturday': 'Sabtu',
+            'Sunday': 'Minggu',
+        };
+        return dayTranslations[day] || day;
+    };
+
+    // Function to handle date change and automatically set day
+    const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const dateValue = e.target.value;
+        setData('date', dateValue);
+
+        if (dateValue) {
+            const selectedDate = new Date(dateValue);
+            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const dayName = days[selectedDate.getDay()];
+            setData('day', dayName);
+        }
+    };
 
     return (
         <LecturerLayout breadcrumbs={[
@@ -86,44 +104,28 @@ export default function Create({ labs }: PageProps) {
 
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                 <div>
-                                    <Label htmlFor="day">Hari</Label>
-                                    <Select
-                                        value={data.day}
-                                        onValueChange={(value) => setData('day', value)}
-                                    >
-                                        <SelectTrigger id="day">
-                                            <SelectValue placeholder="Pilih hari" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="Monday">Senin</SelectItem>
-                                            <SelectItem value="Tuesday">Selasa</SelectItem>
-                                            <SelectItem value="Wednesday">Rabu</SelectItem>
-                                            <SelectItem value="Thursday">Kamis</SelectItem>
-                                            <SelectItem value="Friday">Jumat</SelectItem>
-                                            <SelectItem value="Saturday">Sabtu</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    <InputError message={errors.day} />
-                                </div>
-
-                                <div>
                                     <Label htmlFor="date">Tanggal</Label>
                                     <Input
                                         id="date"
                                         type="date"
                                         value={data.date}
-                                        onChange={(e) => {
-                                            setData('date', e.target.value);
-                                            if (e.target.value) {
-                                                const selectedDate = new Date(e.target.value);
-                                                const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-                                                const dayName = days[selectedDate.getDay()];
-                                                setData('day', dayName);
-                                            }
-                                        }}
+                                        onChange={handleDateChange}
                                         className="block w-full"
                                     />
                                     <InputError message={errors.date} />
+                                </div>
+
+                                <div>
+                                    <Label htmlFor="day">Hari (Otomatis)</Label>
+                                    <Input
+                                        id="day_display"
+                                        type="text"
+                                        value={data.day ? translateDayToIndonesian(data.day) : ''}
+                                        readOnly
+                                        className="block w-full bg-gray-50"
+                                    />
+                                    <input type="hidden" id="day" value={data.day} />
+                                    <InputError message={errors.day} />
                                 </div>
                             </div>
 

@@ -4,14 +4,29 @@ import LecturerLayout from '@/layouts/LecturerLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { format } from 'date-fns';
+import { id } from 'date-fns/locale';
+
+interface Lab {
+    id: number;
+    name: string;
+    location: string;
+}
+
+interface User {
+    id: number;
+    name: string;
+    email: string;
+}
 
 interface Reservation {
     id: number;
-    lab: {
-        id: number;
-        name: string;
-    };
+    lab_id: number;
+    lab: Lab;
+    user_id: number;
+    user: User;
     day: string;
+    date: string;
     start_time: string;
     end_time: string;
     purpose: string;
@@ -35,6 +50,16 @@ export default function Index({ reservations }: PageProps) {
                 return <Badge variant="outline" className="bg-gray-100 text-gray-800">Dibatalkan</Badge>;
             default:
                 return <Badge variant="outline">{status}</Badge>;
+        }
+    };
+
+    // Function to format date
+    const formatDate = (dateString: string) => {
+        try {
+            const date = new Date(dateString);
+            return format(date, 'EEEE, dd MMMM yyyy', { locale: id });
+        } catch {
+            return dateString;
         }
     };
 
@@ -63,12 +88,12 @@ export default function Index({ reservations }: PageProps) {
                             <CardHeader className="pb-2">
                                 <CardTitle>{reservation.lab.name}</CardTitle>
                                 <CardDescription>
-                                    {reservation.day}, {reservation.start_time} - {reservation.end_time}
+                                    {reservation.date ? formatDate(reservation.date) : reservation.day}, {reservation.start_time} - {reservation.end_time}
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="pb-2">
                                 <div className="flex justify-between items-center mb-2">
-                                    <span className="text-sm font-medium">Status:</span>
+                                    <span className="text-sm font-medium text-gray-500">Status:</span>
                                     {getStatusBadge(reservation.status)}
                                 </div>
                                 <p className="text-sm text-gray-600 line-clamp-2">{reservation.purpose}</p>

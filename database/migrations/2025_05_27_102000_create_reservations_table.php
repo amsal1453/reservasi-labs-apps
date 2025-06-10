@@ -19,7 +19,7 @@ return new class extends Migration
             $table->time('start_time');
             $table->time('end_time');
             $table->text('purpose');
-            $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending');
+            $table->enum('status', ['pending', 'approved', 'rejected', 'cancelled'])->default('pending');
             $table->foreignId('lab_id')->constrained('labs')->onDelete('cascade');
             $table->timestamps();
         });
