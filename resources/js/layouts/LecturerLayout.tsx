@@ -3,9 +3,10 @@ import { AppShell } from '@/components/app-shell';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type BreadcrumbItem, type NavItem, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { Bell, CalendarDays, LayoutDashboard, LogOut, User, Calendar } from 'lucide-react';
+import { CalendarDays, LayoutDashboard, LogOut, User, Calendar } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
-import { AppSidebarHeader } from '@/components/app-sidebar-header';
+import { NotificationBell } from '@/components/NotificationBell';
+import { Breadcrumbs } from '@/components/breadcrumbs';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { UserInfo } from '@/components/user-info';
 import { ChevronsUpDown } from 'lucide-react';
@@ -13,7 +14,6 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useSidebar } from '@/components/ui/sidebar';
 import { router } from '@inertiajs/react';
 import { useMobileNavigation } from '@/hooks/use-mobile-navigation';
-import { type LucideIcon } from 'lucide-react';
 
 const lecturerNavItems: NavItem[] = [
     {
@@ -30,11 +30,6 @@ const lecturerNavItems: NavItem[] = [
         title: 'Lab Schedules',
         href: '/lecturer/lab-schedules',
         icon: Calendar,
-    },
-    {
-        title: 'Notifications',
-        href: '/lecturer/notifications',
-        icon: Bell,
     },
 ];
 
@@ -70,12 +65,21 @@ function LecturerSidebar() {
             <SidebarContent>
                 <SidebarMenu>
                     {lecturerNavItems.map((item) => {
-                        const Icon = item.icon as LucideIcon;
                         return (
                             <SidebarMenuItem key={item.href}>
                                 <SidebarMenuButton size="lg" asChild className="hover:bg-accent transition-colors">
                                     <Link href={item.href} prefetch>
-                                        <Icon className="mr-3 size-5" />
+                                        {item.customIcon ? (
+                                            <div className="mr-3">
+                                                <NotificationBell
+                                                    href={item.href}
+                                                    userId={auth.user.id}
+                                                    count={0} // You can pass actual count from backend if available
+                                                />
+                                            </div>
+                                        ) : (
+                                            item.icon && <item.icon className="mr-3 size-5" />
+                                        )}
                                         <span>{item.title}</span>
                                     </Link>
                                 </SidebarMenuButton>
@@ -130,6 +134,25 @@ function LecturerSidebar() {
     );
 }
 
+function LecturerHeader({ breadcrumbs = [] }: { breadcrumbs?: BreadcrumbItem[] }) {
+    const { auth } = usePage<SharedData>().props;
+
+    return (
+        <header className="flex h-16 items-center justify-between border-b px-6">
+            <div className="flex items-center gap-2">
+                <Breadcrumbs breadcrumbs={breadcrumbs} />
+            </div>
+            <div className="flex items-center gap-4">
+                <NotificationBell
+                    href={route('lecturer.notifications.index')}
+                    userId={auth.user.id}
+                    count={0}
+                />
+            </div>
+        </header>
+    );
+}
+
 interface LecturerLayoutProps {
     children: React.ReactNode;
     breadcrumbs?: BreadcrumbItem[];
@@ -140,7 +163,7 @@ export default function LecturerLayout({ children, breadcrumbs = [] }: LecturerL
         <AppShell variant="sidebar">
             <LecturerSidebar />
             <AppContent variant="sidebar" className="px-6 py-6 bg-gray-50">
-                <AppSidebarHeader breadcrumbs={breadcrumbs} />
+                <LecturerHeader breadcrumbs={breadcrumbs} />
                 <div className="mt-6 rounded-lg border bg-white p-6 shadow-sm">
                     {children}
                 </div>

@@ -3,9 +3,10 @@ import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
-import { Link } from '@inertiajs/react';
-import { Bell,  Calendar, CalendarCheck,  LayoutGrid, School, Users } from 'lucide-react';
+import { Link, usePage } from '@inertiajs/react';
+import { Calendar, CalendarCheck, LayoutGrid, School, Users } from 'lucide-react';
 import AppLogo from './app-logo';
+import { NotificationBell } from './NotificationBell';
 
 const mainNavItems: NavItem[] = [
     {
@@ -36,7 +37,8 @@ const mainNavItems: NavItem[] = [
     {
         title: 'Notifikasi',
         href: '/admin/notifications',
-        icon: Bell,
+        icon: null,
+        customIcon: true,
     },
 ];
 
@@ -45,6 +47,8 @@ const footerNavItems: NavItem[] = [
 ];
 
 export function AppSidebar() {
+    const { auth } = usePage().props as any;
+
     return (
         <Sidebar collapsible="icon" variant="inset">
             <SidebarHeader>
@@ -60,7 +64,7 @@ export function AppSidebar() {
             </SidebarHeader>
 
             <SidebarContent>
-                <NavMain items={mainNavItems} />
+                <NavMain items={mainNavItems} userId={auth?.user?.id} />
             </SidebarContent>
 
             <SidebarFooter>

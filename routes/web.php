@@ -8,6 +8,18 @@ use App\Http\Controllers\Admin\ScheduleController;
 use App\Http\Controllers\Admin\ReservationController;
 use App\Http\Controllers\Admin\NotificationController;
 use App\Http\Controllers\Admin\LabManagerController;
+use App\Models\User;
+use App\Notifications\TestNotification;
+
+// Test notification route
+Route::get('/test-notif', function () {
+    $user = User::find(1);
+    if ($user) {
+        $user->notify(new TestNotification());
+        return 'Test notification sent to user ID 1';
+    }
+    return 'User with ID 1 not found';
+});
 
 Route::get('/', function () {
     return Inertia::render('welcome');

@@ -4,13 +4,13 @@ import {
     LayoutDashboard,
     Calendar,
     ClipboardList,
-    Bell,
-    ChevronDown,
     LogOut,
     Menu,
-    X
+    X,
+    ChevronDown
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { NotificationBell } from '@/components/NotificationBell';
 
 interface NavItem {
     title: string;
@@ -40,6 +40,7 @@ interface PageProps {
     auth: {
         user: User
     };
+    [key: string]: unknown;
 }
 
 export default function StudentLayout({ children, breadcrumbs = [] }: StudentLayoutProps) {
@@ -66,12 +67,7 @@ export default function StudentLayout({ children, breadcrumbs = [] }: StudentLay
             icon: <Calendar className="h-5 w-5" />,
             active: route().current('student.lab-schedules.*'),
         },
-        {
-            title: 'Notifikasi',
-            href: route('student.notifications.index'),
-            icon: <Bell className="h-5 w-5" />,
-            active: route().current('student.notifications.*'),
-        },
+        // Notification removed from sidebar and moved to header
     ];
 
     return (
@@ -204,27 +200,36 @@ export default function StudentLayout({ children, breadcrumbs = [] }: StudentLay
             {/* Main content */}
             <div className="lg:pl-64">
                 <div className="lg:py-6 lg:px-8 pt-16 lg:pt-0">
-                    {/* Breadcrumbs */}
-                    {breadcrumbs.length > 0 && (
-                        <nav className="mb-4 hidden lg:block">
-                            <ol className="flex items-center space-x-2 text-sm text-gray-500">
-                                {breadcrumbs.map((crumb, index) => (
-                                    <React.Fragment key={index}>
-                                        {index > 0 && <span>/</span>}
-                                        <li>
-                                            {index === breadcrumbs.length - 1 ? (
-                                                <span className="font-medium text-gray-900">{crumb.title}</span>
-                                            ) : (
-                                                <Link href={crumb.href} className="hover:text-blue-600">
-                                                    {crumb.title}
-                                                </Link>
-                                            )}
-                                        </li>
-                                    </React.Fragment>
-                                ))}
-                            </ol>
-                        </nav>
-                    )}
+                    {/* Header with Breadcrumbs and Notification Bell */}
+                    <div className="mb-4 flex items-center justify-between">
+                        {breadcrumbs.length > 0 && (
+                            <nav className="hidden lg:block">
+                                <ol className="flex items-center space-x-2 text-sm text-gray-500">
+                                    {breadcrumbs.map((crumb, index) => (
+                                        <React.Fragment key={index}>
+                                            {index > 0 && <span>/</span>}
+                                            <li>
+                                                {index === breadcrumbs.length - 1 ? (
+                                                    <span className="font-medium text-gray-900">{crumb.title}</span>
+                                                ) : (
+                                                    <Link href={crumb.href} className="hover:text-blue-600">
+                                                        {crumb.title}
+                                                    </Link>
+                                                )}
+                                            </li>
+                                        </React.Fragment>
+                                    ))}
+                                </ol>
+                            </nav>
+                        )}
+                        <div className="ml-auto">
+                            <NotificationBell
+                                href={route('student.notifications.index')}
+                                userId={auth.user.id}
+                                count={0}
+                            />
+                        </div>
+                    </div>
 
                     {/* Page content */}
                     <main>{children}</main>
