@@ -1,13 +1,14 @@
 import React from 'react';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, useForm } from '@inertiajs/react';
 import StudentLayout from '@/layouts/StudentLayout';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { FormError } from '@/components/form-error';
+import InputError from '@/components/input-error';
 
 interface Lab {
     id: number;
@@ -17,32 +18,50 @@ interface Lab {
     status: string;
 }
 
-interface Props {
+interface PageProps {
     labs: Lab[];
-    errors: {
-        day?: string;
-        start_time?: string;
-        end_time?: string;
-        purpose?: string;
-        lab_id?: string;
-        conflict?: string;
-    };
 }
 
-export default function Create({ labs, errors }: Props) {
-    const { data, setData, post, processing } = useForm({
+export default function Create({ labs }: PageProps) {
+    const { data, setData, post, processing, errors } = useForm({
+        lab_id: '',
         day: '',
+        date: '',
         start_time: '',
         end_time: '',
         purpose: '',
-        lab_id: '',
     });
-
-    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         post(route('student.reservations.store'));
+    };
+
+    // Function to convert English day names to Indonesian
+    const translateDayToIndonesian = (day: string): string => {
+        const dayTranslations: Record<string, string> = {
+            'Monday': 'Senin',
+            'Tuesday': 'Selasa',
+            'Wednesday': 'Rabu',
+            'Thursday': 'Kamis',
+            'Friday': 'Jumat',
+            'Saturday': 'Sabtu',
+            'Sunday': 'Minggu',
+        };
+        return dayTranslations[day] || day;
+    };
+
+    // Function to handle date change and automatically set day
+    const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const dateValue = e.target.value;
+        setData('date', dateValue);
+
+        if (dateValue) {
+            const selectedDate = new Date(dateValue);
+            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const dayName = days[selectedDate.getDay()];
+            setData('day', dayName);
+        }
     };
 
     return (
@@ -51,72 +70,67 @@ export default function Create({ labs, errors }: Props) {
             { title: 'Reservasi', href: route('student.reservations.index') },
             { title: 'Buat Reservasi', href: route('student.reservations.create') },
         ]}>
-            <Head title="Buat Reservasi" />
+            <Head title="Buat Reservasi Lab" />
 
-            <div className="mb-6 flex items-center">
-                <Link href={route('student.reservations.index')} className="mr-4">
-                    <Button variant="outline" size="icon">
-                        <ArrowLeft className="h-4 w-4" />
-                    </Button>
-                </Link>
-                <h1 className="text-2xl font-bold">Buat Reservasi Lab</h1>
-            </div>
-
-            <Card>
-                <CardHeader>
-                    <CardTitle>Form Reservasi</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    {errors.conflict && (
-                        <div className="bg-red-50 border border-red-200 text-red-800 rounded-md p-4 mb-6">
-                            {errors.conflict}
-                        </div>
-                    )}
-
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                        <div className="space-y-4">
-                            <div>
-                                <Label htmlFor="lab_id">Lab</Label>
+            <div className="max-w-3xl mx-auto">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Buat Reservasi Lab</CardTitle>
+                        <CardDescription>
+                            Silakan lengkapi form berikut untuk mengajukan reservasi lab
+                        </CardDescription>
+                    </CardHeader>
+                    <form onSubmit={handleSubmit}>
+                        <CardContent className="space-y-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="lab_id">Pilih Lab</Label>
                                 <Select
                                     value={data.lab_id}
                                     onValueChange={(value) => setData('lab_id', value)}
                                 >
-                                    <SelectTrigger id="lab_id" className="w-full">
+                                    <SelectTrigger id="lab_id">
                                         <SelectValue placeholder="Pilih Lab" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {labs.map((lab) => (
-                                            <SelectItem key={lab.id} value={lab.id.toString()}>
+                                            <SelectItem key={lab.id} value={String(lab.id)}>
                                                 {lab.name} - {lab.location}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
-                                {errors.lab_id && <p className="text-sm text-red-500 mt-1">{errors.lab_id}</p>}
+                                <FormError message={errors.lab_id} />
                             </div>
 
-                            <div>
-                                <Label htmlFor="day">Hari</Label>
-                                <Select
-                                    value={data.day}
-                                    onValueChange={(value) => setData('day', value)}
-                                >
-                                    <SelectTrigger id="day" className="w-full">
-                                        <SelectValue placeholder="Pilih Hari" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {days.map((day) => (
-                                            <SelectItem key={day} value={day}>
-                                                {day}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                {errors.day && <p className="text-sm text-red-500 mt-1">{errors.day}</p>}
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                 <div>
+                                    <Label htmlFor="date">Tanggal</Label>
+                                    <Input
+                                        id="date"
+                                        type="date"
+                                        value={data.date}
+                                        onChange={handleDateChange}
+                                        className="block w-full"
+                                    />
+                                    <InputError message={errors.date} />
+                                </div>
+
+                                <div>
+                                    <Label htmlFor="day">Hari (Otomatis)</Label>
+                                    <Input
+                                        id="day_display"
+                                        type="text"
+                                        value={data.day ? translateDayToIndonesian(data.day) : ''}
+                                        readOnly
+                                        className="block w-full bg-gray-50"
+                                    />
+                                    <input type="hidden" id="day" value={data.day} />
+                                    <InputError message={errors.day} />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
                                     <Label htmlFor="start_time">Waktu Mulai</Label>
                                     <Input
                                         id="start_time"
@@ -124,10 +138,9 @@ export default function Create({ labs, errors }: Props) {
                                         value={data.start_time}
                                         onChange={(e) => setData('start_time', e.target.value)}
                                     />
-                                    {errors.start_time && <p className="text-sm text-red-500 mt-1">{errors.start_time}</p>}
+                                    <FormError message={errors.start_time} />
                                 </div>
-
-                                <div>
+                                <div className="space-y-2">
                                     <Label htmlFor="end_time">Waktu Selesai</Label>
                                     <Input
                                         id="end_time"
@@ -135,31 +148,37 @@ export default function Create({ labs, errors }: Props) {
                                         value={data.end_time}
                                         onChange={(e) => setData('end_time', e.target.value)}
                                     />
-                                    {errors.end_time && <p className="text-sm text-red-500 mt-1">{errors.end_time}</p>}
+                                    <FormError message={errors.end_time} />
                                 </div>
                             </div>
 
-                            <div>
-                                <Label htmlFor="purpose">Keperluan</Label>
+                            <div className="space-y-2">
+                                <Label htmlFor="purpose">Tujuan Penggunaan</Label>
                                 <Textarea
                                     id="purpose"
-                                    placeholder="Jelaskan keperluan penggunaan lab"
+                                    placeholder="Jelaskan tujuan penggunaan lab"
                                     value={data.purpose}
                                     onChange={(e) => setData('purpose', e.target.value)}
-                                    rows={3}
+                                    rows={4}
                                 />
-                                {errors.purpose && <p className="text-sm text-red-500 mt-1">{errors.purpose}</p>}
+                                <FormError message={errors.purpose} />
                             </div>
-                        </div>
-
-                        <div className="flex justify-end">
-                            <Button type="submit" disabled={processing}>
-                                {processing ? 'Mengirim...' : 'Kirim Reservasi'}
+                        </CardContent>
+                        <CardFooter className="flex justify-between">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => window.history.back()}
+                            >
+                                Batal
                             </Button>
-                        </div>
+                            <Button type="submit" disabled={processing}>
+                                {processing ? 'Memproses...' : 'Ajukan Reservasi'}
+                            </Button>
+                        </CardFooter>
                     </form>
-                </CardContent>
-            </Card>
+                </Card>
+            </div>
         </StudentLayout>
     );
 }

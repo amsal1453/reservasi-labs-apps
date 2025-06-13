@@ -55,7 +55,11 @@ class ReservationController extends Controller
             ->whereIn('status', ['pending', 'approved'])
             ->where(function ($query) use ($request) {
                 $query->whereBetween('start_time', [$request->start_time, $request->end_time])
-                    ->orWhereBetween('end_time', [$request->start_time, $request->end_time]);
+                ->orWhereBetween('end_time', [$request->start_time, $request->end_time])
+                ->orWhere(function ($q) use ($request) {
+                    $q->where('start_time', '<=', $request->start_time)
+                        ->where('end_time', '>=', $request->end_time);
+                });
             })
             ->exists();
 
@@ -65,7 +69,8 @@ class ReservationController extends Controller
             ])->withInput();
         }
 
-        Reservation::create([
+        // Buat reservasi baru
+        $reservation = Reservation::create([
             'user_id'       => Auth::id(),
             'day'           => $request->day,
             'date'          => $request->date,
@@ -75,6 +80,12 @@ class ReservationController extends Controller
             'lab_id'        => $request->lab_id,
             'status'        => 'pending',
         ]);
+
+        // Kirim notifikasi ke admin
+        $admins = User::role('admin')->get();
+        foreach ($admins as $admin) {
+            $admin->notify(new ReservationCreated($reservation));
+        }
 
         return redirect()->route('student.reservations.index')
             ->with('success', 'Reservasi berhasil dikirim dan menunggu persetujuan.');
