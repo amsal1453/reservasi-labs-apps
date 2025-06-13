@@ -1,55 +1,104 @@
 import { Bell } from 'lucide-react';
 import { Link } from '@inertiajs/react';
 import { cn } from '@/lib/utils';
-import { useState, useEffect } from 'react';
+import { useNotifications } from '@/hooks/use-notifications';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuGroup,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
+import { format } from 'date-fns';
+import { Check } from 'lucide-react';
 
 interface NotificationBellProps {
-    count?: number;
-    userId?: number;
     href: string;
     className?: string;
 }
 
-export function NotificationBell({ count = 0, userId, href, className }: NotificationBellProps) {
-    const [notificationCount, setNotificationCount] = useState(count);
+export function NotificationBell({ href, className }: NotificationBellProps) {
+    const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
 
-    useEffect(() => {
-        if (!userId) return;
-
-        // Listen for notifications on the private channel
-        // TypeScript definition for window with Echo
-        interface WindowWithEcho extends Window {
-            Echo?: {
-                private: (channel: string) => {
-                    notification: (callback: () => void) => void;
-                    stopListening: (event: string) => void;
-                };
-            };
+    const formatDate = (dateString: string) => {
+        try {
+            const date = new Date(dateString);
+            return format(date, 'MMM d, h:mm a');
+        } catch {
+            return dateString;
         }
-
-        const echoWindow = window as WindowWithEcho;
-        if (echoWindow.Echo) {
-            const channel = echoWindow.Echo.private(`users.${userId}`);
-
-            channel.notification(() => {
-                // Increment notification count when a new notification is received
-                setNotificationCount((prev) => prev + 1);
-            });
-
-            return () => {
-                channel.stopListening('notification');
-            };
-        }
-    }, [userId]);
+    };
 
     return (
-        <Link href={href} className={cn("relative", className)}>
-            <Bell className="h-5 w-5" />
-            {notificationCount > 0 && (
-                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-blue-600 text-[10px] font-medium text-white">
-                    {notificationCount > 9 ? '9+' : notificationCount}
-                </span>
-            )}
-        </Link>
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className={cn("relative", className)}>
+                    <Bell className="h-5 w-5" />
+                    {unreadCount > 0 && (
+                        <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-blue-600 text-[10px] font-medium text-white">
+                            {unreadCount > 9 ? '9+' : unreadCount}
+                        </span>
+                    )}
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-80">
+                <DropdownMenuLabel className="flex items-center justify-between">
+                    <span>Notifications</span>
+                    {unreadCount > 0 && (
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 text-xs"
+                            onClick={() => markAllAsRead()}
+                        >
+                            <Check className="mr-1 h-3 w-3" />
+                            Mark all as read
+                        </Button>
+                    )}
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuGroup className="max-h-[300px] overflow-y-auto">
+                    {notifications.length === 0 ? (
+                        <div className="p-4 text-center text-sm text-gray-500">
+                            No notifications
+                        </div>
+                    ) : (
+                        notifications.map((notification) => (
+                            <DropdownMenuItem key={notification.id} asChild>
+                                <Link
+                                    href={notification.data.url || href}
+                                    className={cn(
+                                        "flex flex-col p-3 cursor-pointer",
+                                        !notification.read_at && "bg-gray-50"
+                                    )}
+                                    onClick={() => {
+                                        if (!notification.read_at) {
+                                            markAsRead(notification.id);
+                                        }
+                                    }}
+                                >
+                                    <div className="flex justify-between items-start">
+                                        <span className="font-medium">{notification.data.title}</span>
+                                        <span className="text-xs text-gray-500">
+                                            {formatDate(notification.created_at)}
+                                        </span>
+                                    </div>
+                                    <p className="text-sm text-gray-600 mt-1">{notification.data.message}</p>
+                                </Link>
+                            </DropdownMenuItem>
+                        ))
+                    )}
+                </DropdownMenuGroup>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                    <Link href={href} className="justify-center text-center text-sm font-medium">
+                        View all notifications
+                    </Link>
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+        </DropdownMenu>
     );
 }

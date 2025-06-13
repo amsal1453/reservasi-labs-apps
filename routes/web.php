@@ -10,6 +10,8 @@ use App\Http\Controllers\Admin\NotificationController;
 use App\Http\Controllers\Admin\LabManagerController;
 use App\Models\User;
 use App\Notifications\TestNotification;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 
 // Test notification route
 Route::get('/test-notif', function () {
@@ -19,6 +21,16 @@ Route::get('/test-notif', function () {
         return 'Test notification sent to user ID 1';
     }
     return 'User with ID 1 not found';
+});
+
+Route::get('/test-notification', function () {
+    $user = Auth::user();
+    if ($user) {
+        Log::info('Sending test notification to user: ' . $user->id);
+        $user->notify(new TestNotification());
+        return 'Test notification sent!';
+    }
+    return 'User not logged in!';
 });
 
 Route::get('/', function () {
@@ -101,6 +113,20 @@ Route::middleware(['auth', 'role:student'])->prefix('student')->name('student.')
         ->name('notifications.show');
 });
 
+// Notification API routes
+Route::middleware(['auth'])->group(function () {
+    Route::get('/notifications', [App\Http\Controllers\NotificationController::class, 'index']);
+    Route::post('/notifications/{id}/read', [App\Http\Controllers\NotificationController::class, 'markAsRead']);
+    Route::post('/notifications/mark-all-read', [App\Http\Controllers\NotificationController::class, 'markAllAsRead']);
+    Route::delete('/notifications/{id}', [App\Http\Controllers\NotificationController::class, 'destroy']);
+});
+
+// Notification API endpoints
+Route::middleware('auth')->group(function () {
+    Route::get('/notifications', [\App\Http\Controllers\NotificationController::class, 'apiIndex']);
+    Route::post('/notifications/{notification}/read', [\App\Http\Controllers\NotificationController::class, 'apiMarkAsRead']);
+    Route::post('/notifications/mark-all-read', [\App\Http\Controllers\NotificationController::class, 'apiMarkAllAsRead']);
+});
 
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';

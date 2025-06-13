@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Models\Reservation;
 use App\Models\Lab;
+use App\Models\User;
+use App\Notifications\ReservationSubmittedNotification;
 use Illuminate\Support\Facades\Auth;
 
 class ReservationController extends Controller
@@ -62,7 +64,7 @@ class ReservationController extends Controller
             ])->withInput();
         }
 
-        Reservation::create([
+        $reservation = Reservation::create([
             'user_id'    => Auth::id(),
             'day'        => $request->day,
             'date'       => $request->date,
@@ -72,6 +74,12 @@ class ReservationController extends Controller
             'lab_id'     => $request->lab_id,
             'status'     => 'pending',
         ]);
+
+        // Kirim notifikasi ke admin
+        $admins = User::role('admin')->get();
+        foreach ($admins as $admin) {
+            $admin->notify(new ReservationSubmittedNotification($reservation));
+        }
 
         return redirect()->route('lecturer.reservations.index')
             ->with('success', 'Reservasi berhasil diajukan dan menunggu persetujuan.');
@@ -140,6 +148,12 @@ class ReservationController extends Controller
             'lab_id'     => $request->lab_id,
         ]);
 
+        // Notify admins about the update
+        $admins = User::role('admin')->get();
+        foreach ($admins as $admin) {
+            $admin->notify(new ReservationSubmittedNotification($reservation));
+        }
+
         return redirect()->route('lecturer.reservations.index')
             ->with('success', 'Reservasi berhasil diperbarui.');
     }
@@ -154,6 +168,12 @@ class ReservationController extends Controller
         }
 
         $reservation->update(['status' => 'cancelled']);
+
+        // Notify admins about the cancellation
+        $admins = User::role('admin')->get();
+        foreach ($admins as $admin) {
+            $admin->notify(new ReservationSubmittedNotification($reservation));
+        }
 
         return redirect()->route('lecturer.reservations.index')
             ->with('success', 'Reservasi berhasil dibatalkan.');

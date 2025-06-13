@@ -8,17 +8,20 @@ use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Notifications\Messages\BroadcastMessage;
+use Illuminate\Broadcasting\PrivateChannel;
 
 class TestNotification extends Notification implements ShouldBroadcast, ShouldQueue
 {
     use Queueable;
 
+    protected $data;
+
     /**
      * Create a new notification instance.
      */
-    public function __construct()
+    public function __construct(array $data)
     {
-        //
+        $this->data = $data;
     }
 
     /**
@@ -49,11 +52,7 @@ class TestNotification extends Notification implements ShouldBroadcast, ShouldQu
      */
     public function toArray(object $notifiable): array
     {
-        return [
-            'message' => 'This is a test notification',
-            'type' => 'test_notification',
-            'time' => now()->toISOString(),
-        ];
+        return $this->data;
     }
 
     /**
@@ -66,5 +65,15 @@ class TestNotification extends Notification implements ShouldBroadcast, ShouldQu
             'type' => 'test_notification',
             'time' => now()->toISOString(),
         ]);
+    }
+
+    /**
+     * Get the channels the notification should broadcast on.
+     *
+     * @return array<int, \Illuminate\Broadcasting\Channel>
+     */
+    public function broadcastOn(): array
+    {
+        return [new PrivateChannel('users')];
     }
 }

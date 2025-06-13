@@ -25,13 +25,21 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { format } from 'date-fns';
 
-interface Notification {
-    id: number;
+interface NotificationData {
     title: string;
     message: string;
-    sent_at: string;
-    is_read: boolean;
+    url?: string;
+}
+
+interface Notification {
+    id: string;
+    type: string;
+    data: NotificationData;
+    read_at: string | null;
+    created_at: string;
+    updated_at: string;
 }
 
 interface Props {
@@ -40,14 +48,14 @@ interface Props {
 
 export default function Index({ notifications }: Props) {
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-    const [notificationToDelete, setNotificationToDelete] = useState<number | null>(null);
+    const [notificationToDelete, setNotificationToDelete] = useState<string | null>(null);
 
     const breadcrumbItems: BreadcrumbItem[] = [
         { title: 'Dashboard', href: route('admin.dashboard') },
         { title: 'Notifications', href: route('admin.notifications.index') },
     ];
 
-    const handleDelete = (id: number) => {
+    const handleDelete = (id: string) => {
         setNotificationToDelete(id);
         setIsDeleteDialogOpen(true);
     };
@@ -61,6 +69,15 @@ export default function Index({ notifications }: Props) {
 
     const markAllAsRead = () => {
         router.post(route('admin.notifications.mark-all-read'));
+    };
+
+    const formatDate = (dateString: string) => {
+        try {
+            const date = new Date(dateString);
+            return format(date, 'MMM d, yyyy h:mm a');
+        } catch {
+            return dateString;
+        }
     };
 
     return (
@@ -93,16 +110,16 @@ export default function Index({ notifications }: Props) {
                                     {notifications.map((notification) => (
                                         <TableRow key={notification.id}>
                                             <TableCell>
-                                                {notification.is_read ? (
+                                                {notification.read_at ? (
                                                     <Badge variant="outline" className="bg-gray-100">Read</Badge>
                                                 ) : (
                                                     <Badge>New</Badge>
                                                 )}
                                             </TableCell>
                                             <TableCell className="font-medium">
-                                                {notification.title}
+                                                {notification.data.title}
                                             </TableCell>
-                                            <TableCell>{notification.sent_at}</TableCell>
+                                            <TableCell>{formatDate(notification.created_at)}</TableCell>
                                             <TableCell className="text-right">
                                                 <div className="flex justify-end gap-2">
                                                     <Button

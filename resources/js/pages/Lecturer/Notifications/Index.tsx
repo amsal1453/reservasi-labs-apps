@@ -32,13 +32,13 @@ interface Notification {
 interface PageProps {
     notifications: {
         data: Notification[];
-        links: {
+        links?: {
             first: string;
             last: string;
             prev: string | null;
             next: string | null;
         };
-        meta: {
+        meta?: {
             current_page: number;
             from: number;
             last_page: number;
@@ -188,18 +188,18 @@ export default function Index({ notifications, unreadCount, filters }: PageProps
                             ))}
                         </div>
 
-                        {notifications.meta.last_page > 1 && (
+                            {notifications.meta && notifications.meta.last_page > 1 && (
                             <div className="flex justify-center">
                                 <Pagination>
                                     <PaginationContent>
                                         <PaginationItem>
                                             <PaginationPrevious
-                                                onClick={() => notifications.meta.current_page > 1 && handlePageChange(notifications.meta.current_page - 1)}
-                                                disabled={notifications.meta.current_page === 1}
+                                                    onClick={() => notifications.meta && notifications.meta.current_page > 1 && handlePageChange(notifications.meta.current_page - 1)}
+                                                    disabled={!notifications.meta || notifications.meta.current_page === 1}
                                             />
                                         </PaginationItem>
 
-                                        {notifications.meta.links.slice(1, -1).map((link, i) => (
+                                            {notifications.meta.links && notifications.meta.links.slice(1, -1).map((link, i) => (
                                             <PaginationItem key={i}>
                                                 <PaginationLink
                                                     isActive={link.active}
@@ -212,8 +212,8 @@ export default function Index({ notifications, unreadCount, filters }: PageProps
 
                                         <PaginationItem>
                                             <PaginationNext
-                                                onClick={() => notifications.meta.current_page < notifications.meta.last_page && handlePageChange(notifications.meta.current_page + 1)}
-                                                disabled={notifications.meta.current_page === notifications.meta.last_page}
+                                                    onClick={() => notifications.meta && notifications.meta.current_page < notifications.meta.last_page && handlePageChange(notifications.meta.current_page + 1)}
+                                                    disabled={!notifications.meta || notifications.meta.current_page === notifications.meta.last_page}
                                             />
                                         </PaginationItem>
                                     </PaginationContent>

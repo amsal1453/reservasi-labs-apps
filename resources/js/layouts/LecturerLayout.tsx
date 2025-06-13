@@ -73,8 +73,6 @@ function LecturerSidebar() {
                                             <div className="mr-3">
                                                 <NotificationBell
                                                     href={item.href}
-                                                    userId={auth.user.id}
-                                                    count={0} // You can pass actual count from backend if available
                                                 />
                                             </div>
                                         ) : (
@@ -135,8 +133,6 @@ function LecturerSidebar() {
 }
 
 function LecturerHeader({ breadcrumbs = [] }: { breadcrumbs?: BreadcrumbItem[] }) {
-    const { auth } = usePage<SharedData>().props;
-
     return (
         <header className="flex h-16 items-center justify-between border-b px-6">
             <div className="flex items-center gap-2">
@@ -145,8 +141,6 @@ function LecturerHeader({ breadcrumbs = [] }: { breadcrumbs?: BreadcrumbItem[] }
             <div className="flex items-center gap-4">
                 <NotificationBell
                     href={route('lecturer.notifications.index')}
-                    userId={auth.user.id}
-                    count={0}
                 />
             </div>
         </header>

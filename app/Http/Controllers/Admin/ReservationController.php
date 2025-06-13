@@ -8,6 +8,7 @@ use App\Models\Reservation;
 use Illuminate\Support\Facades\DB;
 use App\Models\Schedule;
 use App\Models\Lab;
+use App\Notifications\ReservationStatusNotification;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Redirect;
 
@@ -115,6 +116,11 @@ class ReservationController extends Controller
                 'reservation_id' => $reservation->id,
             ]);
 
+            // Send notification to the user
+            $user = $reservation->user;
+            $message = "Your reservation for {$reservation->lab->name} has been approved.";
+            $user->notify(new ReservationStatusNotification($reservation, 'approved', $message));
+
             DB::commit();
 
             return Redirect::route('admin.reservations.index')
@@ -131,6 +137,11 @@ class ReservationController extends Controller
     public function reject(Reservation $reservation)
     {
         $reservation->update(['status' => 'rejected']);
+
+        // Send notification to the user
+        $user = $reservation->user;
+        $message = "Your reservation for {$reservation->lab->name} has been rejected.";
+        $user->notify(new ReservationStatusNotification($reservation, 'rejected', $message));
 
         return Redirect::route('admin.reservations.index')
             ->with('message', 'Reservasi berhasil ditolak');

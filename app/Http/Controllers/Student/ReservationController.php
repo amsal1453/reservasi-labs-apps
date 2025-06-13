@@ -8,10 +8,10 @@ use Inertia\Inertia;
 use App\Models\Lab;
 use App\Models\Reservation;
 use App\Models\Schedule;
-use App\Notifications\ReservationCreated;
+use App\Models\User;
+use App\Notifications\ReservationSubmittedNotification;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Notification;
-use App\Models\User;
 
 class ReservationController extends Controller
 {
@@ -84,7 +84,7 @@ class ReservationController extends Controller
         // Kirim notifikasi ke admin
         $admins = User::role('admin')->get();
         foreach ($admins as $admin) {
-            $admin->notify(new ReservationCreated($reservation));
+            $admin->notify(new ReservationSubmittedNotification($reservation));
         }
 
         return redirect()->route('student.reservations.index')

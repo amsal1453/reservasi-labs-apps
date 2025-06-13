@@ -5,16 +5,18 @@ namespace App\Http\Controllers\Student;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-use App\Models\Notification;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Notifications\DatabaseNotification;
 
 class NotificationController extends Controller
 {
     public function index()
     {
-        $notifications = Notification::where('user_id', Auth::id())
-            ->orderBy('is_read', 'asc')
-            ->orderBy('sent_at', 'desc')
+        $user = Auth::user();
+        $notifications = DatabaseNotification::where('notifiable_type', get_class($user))
+            ->where('notifiable_id', $user->id)
+            ->orderByRaw('CASE WHEN read_at IS NULL THEN 0 ELSE 1 END')
+            ->orderBy('created_at', 'desc')
             ->get();
 
         return Inertia::render('Student/Notifications/Index', [
@@ -22,12 +24,12 @@ class NotificationController extends Controller
         ]);
     }
 
-    public function show(Notification $notification)
+    public function show(DatabaseNotification $notification)
     {
-        abort_if($notification->user_id !== Auth::id(), 403);
+        abort_if($notification->notifiable_id !== Auth::id(), 403);
 
-        if (!$notification->is_read) {
-            $notification->update(['is_read' => true]);
+        if (!$notification->read_at) {
+            $notification->markAsRead();
         }
 
         return Inertia::render('Student/Notifications/Show', [
