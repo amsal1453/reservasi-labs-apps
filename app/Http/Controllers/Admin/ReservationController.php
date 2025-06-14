@@ -8,12 +8,30 @@ use App\Models\Reservation;
 use Illuminate\Support\Facades\DB;
 use App\Models\Schedule;
 use App\Models\Lab;
-use App\Notifications\ReservationStatusNotification;
+use App\Notifications\ReservationStatusNotification as ReservationStatusNotificationInApp;
+use App\Services\ReservationNotificationService;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Redirect;
 
 class ReservationController extends Controller
 {
+    /**
+     * @var ReservationNotificationService
+     */
+    protected $notificationService;
+
+    /**
+     * Create a new controller instance.
+     *
+     * @param ReservationNotificationService $notificationService
+     */
+    public function __construct(ReservationNotificationService $notificationService)
+    {
+        $this->notificationService = $notificationService;
+    }
+
     public function index()
     {
         $reservations = Reservation::with(['user', 'schedule', 'lab'])
@@ -102,7 +120,11 @@ class ReservationController extends Controller
             }
 
             // Update status
-            $reservation->update(['status' => 'approved']);
+            $reservation->update([
+                'status' => 'approved',
+                'reviewed_by' => Auth::id(),
+                'reviewed_at' => now(),
+            ]);
 
             // Tambahkan ke jadwal
             Schedule::create([
@@ -116,10 +138,13 @@ class ReservationController extends Controller
                 'reservation_id' => $reservation->id,
             ]);
 
-            // Send notification to the user
+            // Send in-app notification to the user
             $user = $reservation->user;
             $message = "Your reservation for {$reservation->lab->name} has been approved.";
-            $user->notify(new ReservationStatusNotification($reservation, 'approved', $message));
+            $user->notify(new ReservationStatusNotificationInApp($reservation, 'approved', $message));
+
+            // Send email notification
+            $this->notificationService->sendStatusNotificationToUser($reservation, 'approved', $message);
 
             DB::commit();
 
@@ -127,6 +152,12 @@ class ReservationController extends Controller
                 ->with('message', 'Reservasi berhasil disetujui');
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('Error approving reservation', [
+                'reservation_id' => $reservation->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
             return back()->withErrors([
                 'error' => 'Terjadi kesalahan saat menyetujui reservasi.'
             ]);
@@ -134,16 +165,40 @@ class ReservationController extends Controller
     }
 
     // Tolak reservasi
-    public function reject(Reservation $reservation)
+    public function reject(Request $request, Reservation $reservation)
     {
-        $reservation->update(['status' => 'rejected']);
+        try {
+            // Update status and add rejection notes if provided
+            $reservation->update([
+                'status' => 'rejected',
+                'admin_notes' => $request->notes ?? null,
+                'reviewed_by' => Auth::id(),
+                'reviewed_at' => now(),
+            ]);
 
-        // Send notification to the user
-        $user = $reservation->user;
-        $message = "Your reservation for {$reservation->lab->name} has been rejected.";
-        $user->notify(new ReservationStatusNotification($reservation, 'rejected', $message));
+            // Send in-app notification to the user
+            $user = $reservation->user;
+            $message = "Your reservation for {$reservation->lab->name} has been rejected.";
+            if ($request->notes) {
+                $message .= " Reason: {$request->notes}";
+            }
 
-        return Redirect::route('admin.reservations.index')
-            ->with('message', 'Reservasi berhasil ditolak');
+            $user->notify(new ReservationStatusNotificationInApp($reservation, 'rejected', $message));
+
+            // Send email notification
+            $this->notificationService->sendStatusNotificationToUser($reservation, 'rejected', $message);
+
+            return Redirect::route('admin.reservations.index')
+                ->with('message', 'Reservasi berhasil ditolak');
+        } catch (\Exception $e) {
+            Log::error('Error rejecting reservation', [
+                'reservation_id' => $reservation->id,
+                'error' => $e->getMessage()
+            ]);
+
+            return back()->withErrors([
+                'error' => 'Terjadi kesalahan saat menolak reservasi.'
+            ]);
+        }
     }
 }

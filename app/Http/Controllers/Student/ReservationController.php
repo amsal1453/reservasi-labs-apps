@@ -10,11 +10,28 @@ use App\Models\Reservation;
 use App\Models\Schedule;
 use App\Models\User;
 use App\Notifications\ReservationSubmittedNotification;
+use App\Services\ReservationNotificationService;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 
 class ReservationController extends Controller
 {
+    /**
+     * @var ReservationNotificationService
+     */
+    protected $notificationService;
+
+    /**
+     * Create a new controller instance.
+     *
+     * @param ReservationNotificationService $notificationService
+     */
+    public function __construct(ReservationNotificationService $notificationService)
+    {
+        $this->notificationService = $notificationService;
+    }
+
     public function index()
     {
         $reservations = Reservation::with('lab')
@@ -69,26 +86,43 @@ class ReservationController extends Controller
             ])->withInput();
         }
 
-        // Buat reservasi baru
-        $reservation = Reservation::create([
-            'user_id'       => Auth::id(),
-            'day'           => $request->day,
-            'date'          => $request->date,
-            'start_time'    => $request->start_time,
-            'end_time'      => $request->end_time,
-            'purpose'       => $request->purpose,
-            'lab_id'        => $request->lab_id,
-            'status'        => 'pending',
-        ]);
+        try {
+            // Buat reservasi baru
+            $reservation = Reservation::create([
+                'user_id'       => Auth::id(),
+                'day'           => $request->day,
+                'date'          => $request->date,
+                'start_time'    => $request->start_time,
+                'end_time'      => $request->end_time,
+                'purpose'       => $request->purpose,
+                'lab_id'        => $request->lab_id,
+                'status'        => 'pending',
+            ]);
 
-        // Kirim notifikasi ke admin
-        $admins = User::role('admin')->get();
-        foreach ($admins as $admin) {
-            $admin->notify(new ReservationSubmittedNotification($reservation));
+            // Kirim notifikasi ke admin
+            $admins = User::role('admin')->get();
+
+            // Send in-app notifications
+            foreach ($admins as $admin) {
+                $admin->notify(new ReservationSubmittedNotification($reservation));
+            }
+
+            // Send email notifications to admins
+            $this->notificationService->sendRequestNotificationsToAdmins($reservation);
+
+            return redirect()->route('student.reservations.index')
+                ->with('success', 'Reservasi berhasil dikirim dan menunggu persetujuan.');
+        } catch (\Exception $e) {
+            Log::error('Error creating reservation', [
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return back()->withErrors([
+                'error' => 'Terjadi kesalahan saat membuat reservasi. Silakan coba lagi nanti.'
+            ])->withInput();
         }
-
-        return redirect()->route('student.reservations.index')
-            ->with('success', 'Reservasi berhasil dikirim dan menunggu persetujuan.');
     }
 
     // Detail reservasi
