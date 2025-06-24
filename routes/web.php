@@ -40,9 +40,7 @@ Route::get('/', function () {
 })->name('home');
 
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
-    Route::get('dashboard', function () {
-        return Inertia::render('Admin/Dashboard');
-    })->name('dashboard');
+    Route::get('dashboard', [\App\Http\Controllers\Admin\DashboardController::class, 'index'])->name('dashboard');
 
     Route::resource('schedules', ScheduleController::class);
     Route::post('schedules/import', [ScheduleController::class, 'import'])->name('schedules.import');

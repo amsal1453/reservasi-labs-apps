@@ -4,6 +4,9 @@ import { AppSidebar } from '@/components/app-sidebar';
 import { AppSidebarHeader } from '@/components/app-sidebar-header';
 import { type BreadcrumbItem } from '@/types';
 import { type PropsWithChildren } from 'react';
+import AppLogo from '@/components/app-logo';
+import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
+import { Link } from '@inertiajs/react';
 
 export default function AppSidebarLayout({ children, breadcrumbs = [] }: PropsWithChildren<{ breadcrumbs?: BreadcrumbItem[] }>) {
     return (

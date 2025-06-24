@@ -37,12 +37,12 @@ export default function LabManager({ labs }: Props) {
                         {labs.map((lab) => (
                             <Card
                                 key={lab.id}
-                                className="cursor-pointer transition-all hover:shadow-md hover:border-primary"
+                                className="cursor-pointer transition-all hover:shadow-md hover:border-primary bg-gray-300"
                                 onClick={() => handleLabClick(lab.id)}
                             >
-                                <CardContent className="p-6 flex flex-col items-center justify-center text-center">
+                                <CardContent className="p-6 flex flex-col items-center justify-center text-center bg-[#800000] text-white">
                                     <h3 className="font-medium text-lg mb-2">{lab.name}</h3>
-                                    <p className="text-sm text-gray-500">Klik untuk melihat jadwal</p>
+                                    <p className="text-sm text-white/80">Klik untuk melihat jadwal</p>
                                 </CardContent>
                             </Card>
                         ))}

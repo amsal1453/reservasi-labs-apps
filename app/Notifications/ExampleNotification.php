@@ -7,14 +7,16 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class TestNotification extends Notification implements ShouldQueue
+class ExampleNotification extends Notification
 {
     use Queueable;
-    private $data;
 
-    public function __construct($data)
+    /**
+     * Create a new notification instance.
+     */
+    public function __construct()
     {
-        $this->data = $data;
+        //
     }
 
     /**
@@ -22,22 +24,20 @@ class TestNotification extends Notification implements ShouldQueue
      *
      * @return array<int, string>
      */
-    public function via($notifiable): array
+    public function via(object $notifiable): array
     {
-        return ['mail', 'database'];
+        return ['mail'];
     }
 
     /**
      * Get the mail representation of the notification.
      */
-    public function toMail($notifiable)
+    public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject('Test Notification')
-            ->greeting('Hello mirza!')
-            ->line('Test isi Notifikasi:' . $this->data)
-            ->action('Notification Action', url('Dashboard'))
-            ->salutation('Ini adalah contoh notifikasi dengan mail');
+            ->line('The introduction to the notification.')
+            ->action('Notification Action', url('/'))
+            ->line('Thank you for using our application!');
     }
 
     /**

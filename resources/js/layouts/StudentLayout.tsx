@@ -71,7 +71,7 @@ export default function StudentLayout({ children, breadcrumbs = [] }: StudentLay
     ];
 
     return (
-        <div className="min-h-screen bg-gray-100">
+        <div className="min-h-screen bg-white">
             {/* Mobile sidebar toggle */}
             <div className="lg:hidden fixed top-0 left-0 right-0 z-30 bg-white border-b px-4 py-2">
                 <div className="flex items-center justify-between">

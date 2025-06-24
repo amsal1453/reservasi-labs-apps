@@ -77,8 +77,27 @@
     }
 }
 
+/* Custom scrollbar styles */
+::-webkit-scrollbar {
+    width: 10px;
+    background: #fff;
+}
+::-webkit-scrollbar-thumb {
+    background: #000;
+    border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #222;
+}
+
+/* For Firefox */
+html {
+    scrollbar-color: #000 #fff;
+    scrollbar-width: thin;
+}
+
 :root {
-    --background: oklch(1 0 0);
+    --background: #fff;
     --foreground: oklch(0.145 0 0);
     --card: oklch(1 0 0);
     --card-foreground: oklch(0.145 0 0);

@@ -7,9 +7,12 @@ import { initializeTheme } from './hooks/use-appearance';
 import { configureEcho } from '@laravel/echo-react';
 import { Toaster } from 'react-hot-toast';
 
+
 configureEcho({
     broadcaster: 'reverb',
 });
+
+
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
