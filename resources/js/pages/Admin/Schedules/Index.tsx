@@ -1,5 +1,5 @@
 import { Head, Link, useForm, router } from '@inertiajs/react';
-import { Plus, Edit, Trash2, Upload, Download } from 'lucide-react';
+import { Plus, Edit, Trash2, Printer } from 'lucide-react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
@@ -68,12 +68,10 @@ interface EventDetails {
 export default function Index({ schedules, selectedLab, import_errors, message }: Props) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
-    const [isImportModalOpen, setIsImportModalOpen] = useState(false);
-    const [importFile, setImportFile] = useState<File | null>(null);
-    const [isImporting, setIsImporting] = useState(false);
+    const [isPrinting, setIsPrinting] = useState(false);
     const [selectedEvent, setSelectedEvent] = useState<EventDetails | null>(null);
 
-    console.log(schedules);
+    console.log(selectedLab);
 
     const { data, setData, post, processing, errors, reset } = useForm({
         day: '',
@@ -297,19 +295,25 @@ export default function Index({ schedules, selectedLab, import_errors, message }
                     </div>
                     <div className="flex gap-3">
                         {selectedLab && (
-                            <Link href={route('admin.lab-manager.index')}>
-                                <Button variant="outline">
-                                    Kembali ke Pilihan Lab
-                                </Button>
-                            </Link>
+                            <>
+                                <Link href={route('admin.lab-manager.index')}>
+                                    <Button variant="outline">
+                                        Kembali ke Pilihan Lab
+                                    </Button>
+                                </Link>
+                                {/* Link untuk cetak jadwal */}
+                                {selectedLab && selectedLab.id && (
+                                    <a
+                                        href={route('admin.schedules.pdf', { lab_id: selectedLab.id })}
+                                        target="_blank"
+                                        className="inline-flex items-center justify-center rounded-md text-sm font-medium bg-red-500 text-white hover:bg-red-600 h-10 px-4 py-2"
+                                    >
+                                        <Printer className="w-4 h-4 mr-2" />
+                                        Cetak Jadwal
+                                    </a>
+                                )}
+                            </>
                         )}
-                        <Button
-                            variant="outline"
-                            onClick={() => setIsImportModalOpen(true)}
-                        >
-                            <Upload className="w-4 h-4 mr-2" />
-                            Import Excel
-                        </Button>
                         <Link href={route('admin.schedules.create')}>
                             <Button>
                                 <Plus className="w-4 h-4 mr-2" />
@@ -636,54 +640,7 @@ export default function Index({ schedules, selectedLab, import_errors, message }
                     </DialogContent>
                 </Dialog>
 
-                <Dialog open={isImportModalOpen} onOpenChange={setIsImportModalOpen}>
-                    <DialogContent>
-                        <DialogHeader>
-                            <DialogTitle>Import Jadwal dari Excel</DialogTitle>
-                        </DialogHeader>
-                        <form onSubmit={handleImportSubmit} className="space-y-4">
-                            <div className="grid gap-4">
-                                <div className="grid gap-2">
-                                    <Label htmlFor="import_file">File Excel</Label>
-                                    <Input
-                                        id="import_file"
-                                        type="file"
-                                        accept=".xlsx,.xls,.csv"
-                                        onChange={(e) => setImportFile(e.target.files ? e.target.files[0] : null)}
-                                        required
-                                    />
-                                    <div className="mt-2">
-                                        <p className="text-sm text-muted-foreground mb-2">
-                                            Pastikan file Excel yang diupload sesuai dengan format template.
-                                            Jika belum memiliki template, silakan download template terlebih dahulu.
-                                        </p>
-                                        <a
-                                            href={route('admin.schedules.template.download')}
-                                            className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-blue-700 bg-blue-100 rounded-md hover:bg-blue-200 transition-colors"
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                        >
-                                            <Download className="w-4 h-4 mr-2" />
-                                            Download Template Excel
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                            <DialogFooter>
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={() => setIsImportModalOpen(false)}
-                                >
-                                    Batal
-                                </Button>
-                                <Button type="submit" disabled={isImporting || !importFile}>
-                                    {isImporting ? 'Mengimport...' : 'Import'}
-                                </Button>
-                            </DialogFooter>
-                        </form>
-                    </DialogContent>
-                </Dialog>
+
             </div>
         </AppLayout>
     );

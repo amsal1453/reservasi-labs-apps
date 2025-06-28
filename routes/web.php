@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\ScheduleController;
 use App\Http\Controllers\Admin\ReservationController;
 use App\Http\Controllers\Admin\NotificationController;
 use App\Http\Controllers\Admin\LabManagerController;
+use App\Http\Controllers\Admin\PdfController;
 use App\Models\User;
 use App\Notifications\TestNotification;
 use Illuminate\Support\Facades\Log;
@@ -36,15 +37,14 @@ Route::get('/test-notification', function () {
 });
 
 Route::get('/', function () {
-    return Inertia::render('welcome');
-})->name('home');
+    return redirect()->route('login');
+});
 
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('dashboard', [\App\Http\Controllers\Admin\DashboardController::class, 'index'])->name('dashboard');
 
     Route::resource('schedules', ScheduleController::class);
-    Route::post('schedules/import', [ScheduleController::class, 'import'])->name('schedules.import');
-    Route::get('schedules/template/download', [ScheduleController::class, 'downloadTemplate'])->name('schedules.template.download');
+    Route::get('schedules/pdf/{lab_id}', [PdfController::class, 'generateSchedulePdf'])->name('schedules.pdf');
 
     Route::get('lab-manager', [LabManagerController::class, 'index'])->name('lab-manager.index');
 
@@ -65,9 +65,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 });
 
 Route::middleware(['auth', 'role:lecturer'])->prefix('lecturer')->name('lecturer.')->group(function () {
-    Route::get('dashboard', function () {
-        return Inertia::render('Lecturer/Dashboard');
-    })->name('dashboard');
+    Route::get('dashboard', [App\Http\Controllers\Lecturer\DashboardController::class, 'index'])->name('dashboard');
 
     // Reservation routes
     Route::get('/reservations', [App\Http\Controllers\Lecturer\ReservationController::class, 'index'])

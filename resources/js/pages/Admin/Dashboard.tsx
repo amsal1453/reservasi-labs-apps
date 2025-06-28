@@ -1,5 +1,5 @@
 import AppLayout from '@/layouts/app-layout';
-import { Head } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 
 // Tipe data statistik
 interface StatType {
@@ -38,8 +38,8 @@ interface NotificationType {
 interface DashboardProps {
     stats: StatType;
     recentReservations: ReservationType[];
-    upcomingReservations?: UpcomingReservation[];
-    latestNotifications?: NotificationType[];
+    upcomingReservations: UpcomingReservation[];
+    latestNotifications: NotificationType[];
 }
 
 // Warna untuk setiap card statistik yang disesuaikan dengan identitas warna kampus (UUI)
@@ -50,18 +50,6 @@ const statColors = [
     'bg-[#800000] text-white',   // Merah terang - Jumlah Pengguna
 ];
 
-// Data dummy untuk contoh
-const dummyUpcoming = [
-    { lab_name: 'Laboratorium Komputer 101', date: '15 Juni 2023', start_time: '10:00', end_time: '12:00', status: 'disetujui' },
-    { lab_name: 'Laboratorium Fisika 202', date: '16-06-2023', start_time: '13:00', end_time: '15:00', status: 'tertunda' },
-    { lab_name: 'Laboratorium Kimia 303', date: '17-06-2023', start_time: '09:00', end_time: '11:00', status: 'disetujui' },
-];
-const dummyNotif = [
-    { title: 'Reservasi Disetujui', body: 'Reservasi Anda untuk Lab Komputer 101 telah disetujui', date: 'Tanggal 14 Juni 2023', is_new: true },
-    { title: 'Jadwal Lab Diperbarui', body: 'Jadwal Praktikum Fisika 202 telah diupdate', date: 'Tanggal 13 Juni 2023', is_new: false },
-    { title: 'Pemberitahuan Pemeliharaan', body: 'Laboratorium Kimia 303 akan menjalani pemeliharaan pada tanggal 12 Juni 2023', date: 'Tanggal 12 Juni 2023', is_new: false },
-];
-
 export default function Dashboard({ stats, recentReservations, upcomingReservations, latestNotifications }: DashboardProps) {
     const statList = [
         { title: 'Jumlah Reservasi', value: stats.totalReservations },
@@ -69,12 +57,11 @@ export default function Dashboard({ stats, recentReservations, upcomingReservati
         { title: 'Laboratorium Tersedia', value: stats.totalLabs },
         { title: 'Jumlah Pengguna', value: stats.totalUsers },
     ];
-    const upcoming = upcomingReservations ?? dummyUpcoming;
-    const notif = latestNotifications ?? dummyNotif;
+
     return (
         <AppLayout breadcrumbs={[{ title: 'Dashboard', href: '/admin/dashboard' }]}>
             <Head title="Dashboard" />
-            <div className="flex flex-col gap-6 p-2 min-h-screen">
+            <div className="flex flex-col gap-6 p-2 min-h-screen bg-white mt-12">
                 {/* Statistik Ringkas */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 -mt-12 z-10">
                     {statList.map((stat, idx) => (
@@ -89,17 +76,28 @@ export default function Dashboard({ stats, recentReservations, upcomingReservati
                         <h2 className="font-bold text-lg mb-2">Reservasi Mendatang</h2>
                         <div className="text-sm text-gray-500 mb-3">Sesi lab terjadwal Anda berikutnya</div>
                         <div className="space-y-3">
-                            {upcoming.map((r, idx) => (
-                                <div key={idx} className="border rounded-lg p-3 flex justify-between items-center">
-                                    <div>
-                                        <div className="font-semibold">{r.lab_name}</div>
-                                        <div className="text-xs text-gray-500">{r.date} • {r.start_time} - {r.end_time}</div>
+                            {upcomingReservations && upcomingReservations.length > 0 ? (
+                                upcomingReservations.map((r, idx) => (
+                                    <div key={idx} className="border rounded-lg p-3 flex justify-between items-center">
+                                        <div>
+                                            <div className="font-semibold">{r.lab_name}</div>
+                                            <div className="text-xs text-gray-500">{r.date} • {r.start_time} - {r.end_time}</div>
+                                        </div>
+                                        <span className={`px-3 py-1 rounded-full text-xs font-bold ${r.status === 'disetujui' ? 'bg-green-100 text-green-700' : r.status === 'tertunda' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-200 text-gray-700'}`}>
+                                            {r.status}
+                                        </span>
                                     </div>
-                                    <span className={`px-3 py-1 rounded-full text-xs font-bold ${r.status === 'disetujui' ? 'bg-green-100 text-green-700' : r.status === 'tertunda' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-200 text-gray-700'}`}>
-                                        {r.status}
-                                    </span>
+                                ))
+                            ) : (
+                                <div className="text-center py-4 text-gray-500">
+                                    Tidak ada reservasi mendatang
                                 </div>
-                            ))}
+                            )}
+                        </div>
+                        <div className="mt-3">
+                            <Link href={route('admin.reservations.index')} className="text-sm text-blue-600 hover:underline">
+                                Lihat semua reservasi
+                            </Link>
                         </div>
                     </div>
                     {/* Pemberitahuan Terbaru */}
@@ -110,16 +108,27 @@ export default function Dashboard({ stats, recentReservations, upcomingReservati
                         </div>
                         <div className="text-sm text-gray-500 mb-2">Pembaruan dan peringatan</div>
                         <div className="space-y-2">
-                            {notif.map((n, idx) => (
-                                <div key={idx} className="border-b pb-2 mb-2 rounded">
-                                    <div className="font-semibold">{n.title}</div>
-                                    <div className="text-xs text-gray-500">{n.body}</div>
-                                    <div className="flex justify-between items-center mt-1">
-                                        <span className="text-xs text-gray-400">{n.date}</span>
-                                        {n.is_new && <span className="bg-red-100 text-red-600 px-2 py-0.5 rounded-full text-xs">Baru</span>}
+                            {latestNotifications && latestNotifications.length > 0 ? (
+                                latestNotifications.map((n, idx) => (
+                                    <div key={idx} className="border-b pb-2 mb-2 rounded">
+                                        <div className="font-semibold">{n.title}</div>
+                                        <div className="text-xs text-gray-500">{n.body}</div>
+                                        <div className="flex justify-between items-center mt-1">
+                                            <span className="text-xs text-gray-400">{n.date}</span>
+                                            {n.is_new && <span className="bg-red-100 text-red-600 px-2 py-0.5 rounded-full text-xs">Baru</span>}
+                                        </div>
                                     </div>
+                                ))
+                            ) : (
+                                <div className="text-center py-4 text-gray-500">
+                                    Tidak ada notifikasi terbaru
                                 </div>
-                            ))}
+                            )}
+                        </div>
+                        <div className="mt-3">
+                            <Link href={route('admin.notifications.index')} className="text-sm text-blue-600 hover:underline">
+                                Lihat semua notifikasi
+                            </Link>
                         </div>
                     </div>
                 </div>
@@ -127,26 +136,45 @@ export default function Dashboard({ stats, recentReservations, upcomingReservati
                 {/* Tabel Reservasi Terbaru */}
                 <div className="rounded-xl shadow p-4 mt-4 border">
                     <h2 className="font-bold text-lg mb-2">Reservasi Terbaru</h2>
-                    <table className="w-full text-sm">
-                        <thead>
-                            <tr className="border-b">
-                                <th className="text-left py-2">Nama</th>
-                                <th className="text-left py-2">Lab</th>
-                                <th className="text-left py-2">Tanggal</th>
-                                <th className="text-left py-2">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {recentReservations.map((r) => (
-                                <tr key={r.id} className="border-b">
-                                    <td className="py-2">{r.user_name}</td>
-                                    <td className="py-2">{r.lab_name}</td>
-                                    <td className="py-2">{r.date}</td>
-                                    <td className="py-2">{r.status}</td>
+                    {recentReservations && recentReservations.length > 0 ? (
+                        <table className="w-full text-sm">
+                            <thead>
+                                <tr className="border-b">
+                                    <th className="text-left py-2">Nama</th>
+                                    <th className="text-left py-2">Lab</th>
+                                    <th className="text-left py-2">Tanggal</th>
+                                    <th className="text-left py-2">Status</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {recentReservations.map((r) => (
+                                    <tr key={r.id} className="border-b">
+                                        <td className="py-2">{r.user_name}</td>
+                                        <td className="py-2">{r.lab_name}</td>
+                                        <td className="py-2">{r.date}</td>
+                                        <td className="py-2">
+                                            <span className={`px-2 py-1 rounded-full text-xs ${r.status === 'approved' ? 'bg-green-100 text-green-700' :
+                                                r.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                                                    'bg-red-100 text-red-700'
+                                                }`}>
+                                                {r.status === 'approved' ? 'Disetujui' :
+                                                    r.status === 'pending' ? 'Tertunda' : 'Ditolak'}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    ) : (
+                        <div className="text-center py-4 text-gray-500">
+                            Tidak ada reservasi terbaru
+                        </div>
+                    )}
+                    <div className="mt-3">
+                        <Link href={route('admin.reservations.index')} className="text-sm text-blue-600 hover:underline">
+                            Lihat semua reservasi
+                        </Link>
+                    </div>
                 </div>
             </div>
         </AppLayout>

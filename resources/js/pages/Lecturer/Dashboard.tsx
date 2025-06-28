@@ -1,6 +1,6 @@
 import LecturerLayout from '@/layouts/LecturerLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Head } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import { CalendarDays, Clock, School, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -11,7 +11,7 @@ interface Reservation {
     lab: string;
     date: string;
     time: string;
-    status: 'approved' | 'pending' | 'rejected';
+    status: 'approved' | 'pending' | 'rejected' | 'cancelled';
 }
 
 interface Notification {
@@ -32,7 +32,7 @@ interface DashboardProps {
     };
 }
 
-export default function Dashboard({ upcomingReservations = [], recentNotifications = [], stats = { totalReservations: 5, pendingReservations: 2, labsAvailable: 8 } }: DashboardProps) {
+export default function Dashboard({ upcomingReservations, recentNotifications, stats }: DashboardProps) {
     const getStatusColor = (status: string) => {
         switch (status) {
             case 'approved':
@@ -41,26 +41,12 @@ export default function Dashboard({ upcomingReservations = [], recentNotificatio
                 return 'bg-yellow-100 text-yellow-800';
             case 'rejected':
                 return 'bg-red-100 text-red-800';
+            case 'cancelled':
+                return 'bg-gray-100 text-gray-800';
             default:
                 return 'bg-gray-100 text-gray-800';
         }
     };
-
-    // Sample data for demonstration
-    const sampleReservations: Reservation[] = [
-        { id: 1, lab: 'Computer Lab 101', date: '2023-06-15', time: '10:00 - 12:00', status: 'approved' },
-        { id: 2, lab: 'Physics Lab 202', date: '2023-06-16', time: '13:00 - 15:00', status: 'pending' },
-        { id: 3, lab: 'Chemistry Lab 303', date: '2023-06-17', time: '09:00 - 11:00', status: 'approved' },
-    ];
-
-    const sampleNotifications: Notification[] = [
-        { id: 1, title: 'Reservation Approved', message: 'Your reservation for Computer Lab 101 has been approved', date: '2023-06-14', read: false },
-        { id: 2, title: 'Lab Schedule Updated', message: 'The schedule for Physics Lab 202 has been updated', date: '2023-06-13', read: true },
-        { id: 3, title: 'Maintenance Notice', message: 'Chemistry Lab 303 will be under maintenance on June 20', date: '2023-06-12', read: true },
-    ];
-
-    const reservationsToShow = upcomingReservations.length > 0 ? upcomingReservations : sampleReservations;
-    const notificationsToShow = recentNotifications.length > 0 ? recentNotifications : sampleNotifications;
 
     return (
         <LecturerLayout>
@@ -87,9 +73,9 @@ export default function Dashboard({ upcomingReservations = [], recentNotificatio
                         <Clock className="w-4 h-4 text-red-700" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{reservationsToShow.filter(r => r.status === 'approved').length}</div>
+                        <div className="text-2xl font-bold">{upcomingReservations.filter(r => r.status === 'approved').length}</div>
                         <p className="text-xs text-muted-foreground">
-                            Next session on {reservationsToShow[0]?.date || 'N/A'}
+                            Next session on {upcomingReservations[0]?.date || 'N/A'}
                         </p>
                     </CardContent>
                 </Card>
@@ -115,21 +101,29 @@ export default function Dashboard({ upcomingReservations = [], recentNotificatio
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-4">
-                            {reservationsToShow.map((reservation) => (
-                                <div key={reservation.id} className="flex items-center justify-between p-4 border rounded-lg">
-                                    <div>
-                                        <h3 className="font-medium">{reservation.lab}</h3>
-                                        <div className="text-sm text-muted-foreground">
-                                            <span>{reservation.date}</span> • <span>{reservation.time}</span>
+                            {upcomingReservations.length > 0 ? (
+                                upcomingReservations.map((reservation) => (
+                                    <div key={reservation.id} className="flex items-center justify-between p-4 border rounded-lg">
+                                        <div>
+                                            <h3 className="font-medium">{reservation.lab}</h3>
+                                            <div className="text-sm text-muted-foreground">
+                                                <span>{reservation.date}</span> • <span>{reservation.time}</span>
+                                            </div>
                                         </div>
+                                        <Badge className={getStatusColor(reservation.status)}>
+                                            {reservation.status}
+                                        </Badge>
                                     </div>
-                                    <Badge className={getStatusColor(reservation.status)}>
-                                        {reservation.status}
-                                    </Badge>
+                                ))
+                            ) : (
+                                <div className="text-center py-4 text-muted-foreground">
+                                    No upcoming reservations
                                 </div>
-                            ))}
-                            <Button variant="outline" className="w-full mt-2">
-                                View All Reservations
+                            )}
+                            <Button variant="outline" className="w-full mt-2" asChild>
+                                <Link href={route('lecturer.reservations.index')}>
+                                    View All Reservations
+                                </Link>
                             </Button>
                         </div>
                     </CardContent>
@@ -144,33 +138,41 @@ export default function Dashboard({ upcomingReservations = [], recentNotificatio
                         <Bell className="w-5 h-5 text-red-700" />
                     </CardHeader>
                     <CardContent>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Title</TableHead>
-                                    <TableHead>Date</TableHead>
-                                    <TableHead className="w-16">Status</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {notificationsToShow.map((notification) => (
-                                    <TableRow key={notification.id}>
-                                        <TableCell>
-                                            <div className="font-medium">{notification.title}</div>
-                                            <div className="text-sm text-muted-foreground">{notification.message}</div>
-                                        </TableCell>
-                                        <TableCell>{notification.date}</TableCell>
-                                        <TableCell>
-                                            {!notification.read && (
-                                                <Badge className="bg-red-100 text-red-800">New</Badge>
-                                            )}
-                                        </TableCell>
+                        {recentNotifications.length > 0 ? (
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Title</TableHead>
+                                        <TableHead>Date</TableHead>
+                                        <TableHead className="w-16">Status</TableHead>
                                     </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                        <Button variant="outline" className="w-full mt-4">
-                            View All Notifications
+                                </TableHeader>
+                                <TableBody>
+                                    {recentNotifications.map((notification) => (
+                                        <TableRow key={notification.id}>
+                                            <TableCell>
+                                                <div className="font-medium">{notification.title}</div>
+                                                <div className="text-sm text-muted-foreground">{notification.message}</div>
+                                            </TableCell>
+                                            <TableCell>{notification.date}</TableCell>
+                                            <TableCell>
+                                                {!notification.read && (
+                                                    <Badge className="bg-red-100 text-red-800">New</Badge>
+                                                )}
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        ) : (
+                            <div className="text-center py-4 text-muted-foreground">
+                                No recent notifications
+                            </div>
+                        )}
+                        <Button variant="outline" className="w-full mt-4" asChild>
+                            <Link href={route('lecturer.notifications.index')}>
+                                View All Notifications
+                            </Link>
                         </Button>
                     </CardContent>
                 </Card>

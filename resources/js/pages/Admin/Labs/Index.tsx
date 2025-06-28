@@ -31,7 +31,6 @@ interface Lab {
     name: string;
     capacity: number | null;
     status: 'available' | 'maintenance';
-    schedules_count: number;
     reservations_count: number;
 }
 
@@ -95,7 +94,6 @@ export default function Index({ labs }: Props) {
                                     <TableHead>Nama</TableHead>
                                     <TableHead>Kapasitas</TableHead>
                                     <TableHead>Status</TableHead>
-                                    <TableHead>Jadwal</TableHead>
                                     <TableHead>Reservasi</TableHead>
                                     <TableHead className="text-right">Aksi</TableHead>
                                 </TableRow>
@@ -106,7 +104,6 @@ export default function Index({ labs }: Props) {
                                         <TableCell className="font-medium">{lab.name}</TableCell>
                                         <TableCell>{lab.capacity || '-'}</TableCell>
                                         <TableCell>{getStatusBadge(lab.status)}</TableCell>
-                                        <TableCell>{lab.schedules_count}</TableCell>
                                         <TableCell>{lab.reservations_count}</TableCell>
                                         <TableCell className="text-right">
                                             <div className="flex justify-end gap-2">

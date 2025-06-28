@@ -55,15 +55,15 @@ export function AppSidebar() {
     const { auth } = usePage().props as any;
 
     return (
-        <Sidebar collapsible="icon" variant="inset" className="bg-[#800000] text-white">
+        <Sidebar collapsible="icon" variant="inset" className="bg-[#800000] text-sidebar-foreground">
             {/* Header: Logo */}
-            <SidebarHeader className="bg-[#800000] flex items-center justify-center h-20 border-b border-[#a52a2a]/40">
+            <SidebarHeader className="flex items-center justify-center h-20 border-b border-sidebar-border/40 bg-[#800000]">
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton
                             size="lg"
                             asChild
-                            className="bg-[#800000] hover:bg-[#800000] flex items-center justify-center p-4"
+                            className="bg-[#800000] flex items-center justify-center p-4"
                         >
                             <Link href="/" prefetch className="flex items-center justify-center">
                                 <AppLogo className="h-14 w-auto" />
@@ -79,7 +79,7 @@ export function AppSidebar() {
             </SidebarContent>
 
             {/* Footer & User Info */}
-            <SidebarFooter className="bg-[#800000] border-t border-[#a52a2a]/40 mt-auto">
+            <SidebarFooter className="bg-[#800000] border-t border-sidebar-border/40 mt-auto">
                 <NavFooter items={footerNavItems} className="mb-2" />
                 <NavUser />
             </SidebarFooter>

@@ -24,7 +24,7 @@ export default function AuthSimpleLayout({ children, title, description }: Props
             <div className="w-full max-w-sm relative z-10">
                 <div className="flex flex-col gap-8 bg-white/20 rounded-2xl shadow-xl p-10 border border-white/30 backdrop-blur-md">
                     <div className="flex flex-col items-center gap-4">
-                        <Link href={route('home')} className="flex flex-col items-center gap-2 font-medium">
+                        <Link href="/" className="flex flex-col items-center gap-2 font-medium">
                             <div className="mb-1 flex items-center justify-center">
                                 <img src="/logouui.png" alt="Logo UUI" className="h-20 w-20 object-contain" />
                             </div>
