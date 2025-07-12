@@ -1,11 +1,13 @@
-import React from 'react';
-import { Head, Link } from '@inertiajs/react';
+import React, { useState } from 'react';
+import { Head, Link, router } from '@inertiajs/react';
 import StudentLayout from '@/layouts/StudentLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Trash2 } from 'lucide-react';
 
 interface Lab {
     id: number;
@@ -33,9 +35,13 @@ interface Reservation {
 interface PageProps {
     reservations: Reservation[];
     success?: string;
+    error?: string;
 }
 
-export default function Index({ reservations, success }: PageProps) {
+export default function Index({ reservations, success, error }: PageProps) {
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [reservationToDelete, setReservationToDelete] = useState<number | null>(null);
+
     const getStatusBadge = (status: string) => {
         switch (status) {
             case 'pending':
@@ -61,6 +67,13 @@ export default function Index({ reservations, success }: PageProps) {
         }
     };
 
+    const handleDelete = (id: number) => {
+        setIsDeleting(true);
+        router.delete(route('student.reservations.destroy', id), {
+            onFinish: () => setIsDeleting(false),
+        });
+    };
+
     return (
         <StudentLayout breadcrumbs={[
             { title: 'Dashboard', href: route('student.dashboard') },
@@ -69,15 +82,21 @@ export default function Index({ reservations, success }: PageProps) {
             <Head title="Daftar Reservasi" />
 
             <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-medium">Daftar Reservasi</h3>
+                <h3 className="text-lg font-medium text-[#800000]">Daftar Reservasi</h3>
                 <Link href={route('student.reservations.create')}>
-                    <Button>Buat Reservasi Baru</Button>
+                    <Button className="bg-[#800000] hover:bg-[#800000]/90">Buat Reservasi Baru</Button>
                 </Link>
             </div>
 
             {success && (
                 <div className="bg-green-50 border border-green-200 text-green-800 rounded-md p-4 mb-6">
                     {success}
+                </div>
+            )}
+
+            {error && (
+                <div className="bg-red-50 border border-red-200 text-red-800 rounded-md p-4 mb-6">
+                    {error}
                 </div>
             )}
 
@@ -102,10 +121,44 @@ export default function Index({ reservations, success }: PageProps) {
                                 </div>
                                 <p className="text-sm text-gray-600 line-clamp-2">{reservation.purpose}</p>
                             </CardContent>
-                            <CardFooter className="pt-2">
+                            <CardFooter className="pt-2 flex justify-between">
                                 <Link href={route('student.reservations.show', reservation.id)}>
-                                    <Button variant="outline" size="sm">Detail</Button>
+                                    <Button variant="outline" size="sm" className="border-[#800000] text-[#800000] hover:bg-[#800000]/10">Detail</Button>
                                 </Link>
+
+                                {reservation.status === 'pending' && (
+                                    <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                            <Button
+                                                variant="destructive"
+                                                size="sm"
+                                                className="flex items-center gap-1"
+                                                disabled={isDeleting && reservationToDelete === reservation.id}
+                                                onClick={() => setReservationToDelete(reservation.id)}
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                                Hapus
+                                            </Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>Hapus Reservasi</AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                    Apakah Anda yakin ingin menghapus reservasi ini? Tindakan ini tidak dapat dibatalkan.
+                                                </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel onClick={() => setReservationToDelete(null)}>Batal</AlertDialogCancel>
+                                                <AlertDialogAction
+                                                    onClick={() => handleDelete(reservation.id)}
+                                                    className="bg-red-600 hover:bg-red-700"
+                                                >
+                                                    {isDeleting && reservationToDelete === reservation.id ? 'Menghapus...' : 'Hapus'}
+                                                </AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
+                                )}
                             </CardFooter>
                         </Card>
                     ))}

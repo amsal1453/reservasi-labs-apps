@@ -49,45 +49,47 @@ export default function Dashboard({ upcomingReservations, recentNotifications, s
     };
 
     return (
-        <LecturerLayout>
+        <LecturerLayout breadcrumbs={[
+            { title: 'Dashboard', href: route('lecturer.dashboard') }
+        ]}>
             <Head title="Dashboard" />
 
-            <h1 className="mb-6 text-2xl font-bold">Lecturer Dashboard</h1>
+            <h1 className="mb-6 text-2xl font-bold text-[#800000]">Dashboard Dosen</h1>
 
             <div className="grid gap-6 md:grid-cols-3">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                        <CardTitle className="text-sm font-medium">Total Reservations</CardTitle>
-                        <CalendarDays className="w-4 h-4 text-red-700" />
+                        <CardTitle className="text-sm font-medium">Total Reservasi</CardTitle>
+                        <CalendarDays className="w-4 h-4 text-[#800000]" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{stats.totalReservations}</div>
                         <p className="text-xs text-muted-foreground">
-                            {stats.pendingReservations} pending approval
+                            {stats.pendingReservations} menunggu persetujuan
                         </p>
                     </CardContent>
                 </Card>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                        <CardTitle className="text-sm font-medium">Upcoming Sessions</CardTitle>
-                        <Clock className="w-4 h-4 text-red-700" />
+                        <CardTitle className="text-sm font-medium">Sesi Mendatang</CardTitle>
+                        <Clock className="w-4 h-4 text-[#800000]" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{upcomingReservations.filter(r => r.status === 'approved').length}</div>
                         <p className="text-xs text-muted-foreground">
-                            Next session on {upcomingReservations[0]?.date || 'N/A'}
+                            Sesi berikutnya pada {upcomingReservations[0]?.date || 'N/A'}
                         </p>
                     </CardContent>
                 </Card>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                        <CardTitle className="text-sm font-medium">Labs Available</CardTitle>
-                        <School className="w-4 h-4 text-red-700" />
+                        <CardTitle className="text-sm font-medium">Lab Tersedia</CardTitle>
+                        <School className="w-4 h-4 text-[#800000]" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{stats.labsAvailable}</div>
                         <p className="text-xs text-muted-foreground">
-                            Available for reservation
+                            Tersedia untuk reservasi
                         </p>
                     </CardContent>
                 </Card>
@@ -96,8 +98,8 @@ export default function Dashboard({ upcomingReservations, recentNotifications, s
             <div className="grid gap-6 mt-6 md:grid-cols-2">
                 <Card className="col-span-1">
                     <CardHeader>
-                        <CardTitle>Upcoming Reservations</CardTitle>
-                        <CardDescription>Your next scheduled lab sessions</CardDescription>
+                        <CardTitle>Reservasi Mendatang</CardTitle>
+                        <CardDescription>Sesi lab yang telah dijadwalkan</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-4">
@@ -111,18 +113,20 @@ export default function Dashboard({ upcomingReservations, recentNotifications, s
                                             </div>
                                         </div>
                                         <Badge className={getStatusColor(reservation.status)}>
-                                            {reservation.status}
+                                            {reservation.status === 'approved' ? 'Disetujui' :
+                                                reservation.status === 'pending' ? 'Menunggu' :
+                                                    reservation.status === 'rejected' ? 'Ditolak' : 'Dibatalkan'}
                                         </Badge>
                                     </div>
                                 ))
                             ) : (
                                 <div className="text-center py-4 text-muted-foreground">
-                                    No upcoming reservations
+                                        Tidak ada reservasi mendatang
                                 </div>
                             )}
                             <Button variant="outline" className="w-full mt-2" asChild>
                                 <Link href={route('lecturer.reservations.index')}>
-                                    View All Reservations
+                                    Lihat Semua Reservasi
                                 </Link>
                             </Button>
                         </div>
@@ -132,18 +136,18 @@ export default function Dashboard({ upcomingReservations, recentNotifications, s
                 <Card className="col-span-1">
                     <CardHeader className="flex flex-row items-center justify-between">
                         <div>
-                            <CardTitle>Recent Notifications</CardTitle>
-                            <CardDescription>Updates and alerts</CardDescription>
+                            <CardTitle>Notifikasi Terbaru</CardTitle>
+                            <CardDescription>Pembaruan dan pemberitahuan</CardDescription>
                         </div>
-                        <Bell className="w-5 h-5 text-red-700" />
+                        <Bell className="w-5 h-5 text-[#800000]" />
                     </CardHeader>
                     <CardContent>
                         {recentNotifications.length > 0 ? (
                             <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead>Title</TableHead>
-                                        <TableHead>Date</TableHead>
+                                        <TableHead>Judul</TableHead>
+                                        <TableHead>Tanggal</TableHead>
                                         <TableHead className="w-16">Status</TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -157,7 +161,7 @@ export default function Dashboard({ upcomingReservations, recentNotifications, s
                                             <TableCell>{notification.date}</TableCell>
                                             <TableCell>
                                                 {!notification.read && (
-                                                    <Badge className="bg-red-100 text-red-800">New</Badge>
+                                                    <Badge className="bg-[#800000]/10 text-[#800000]">Baru</Badge>
                                                 )}
                                             </TableCell>
                                         </TableRow>
@@ -166,12 +170,12 @@ export default function Dashboard({ upcomingReservations, recentNotifications, s
                             </Table>
                         ) : (
                             <div className="text-center py-4 text-muted-foreground">
-                                No recent notifications
+                                    Tidak ada notifikasi terbaru
                             </div>
                         )}
                         <Button variant="outline" className="w-full mt-4" asChild>
                             <Link href={route('lecturer.notifications.index')}>
-                                View All Notifications
+                                Lihat Semua Notifikasi
                             </Link>
                         </Button>
                     </CardContent>

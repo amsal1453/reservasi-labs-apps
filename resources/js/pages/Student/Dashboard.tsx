@@ -58,8 +58,8 @@ export default function Dashboard({
 
             <div className="space-y-6">
                 {/* Welcome section */}
-                <div className="bg-white p-6 rounded-lg shadow-sm">
-                    <h1 className="text-2xl font-bold text-gray-900">Selamat Datang di Sistem Reservasi Lab</h1>
+                <div className="bg-white p-6 rounded-lg shadow-sm border">
+                    <h1 className="text-2xl font-bold text-[#800000]">Selamat Datang di Sistem Reservasi Lab</h1>
                     <p className="text-gray-600 mt-2">
                         Kelola reservasi lab, lihat jadwal, dan pantau notifikasi Anda.
                     </p>
@@ -108,7 +108,7 @@ export default function Dashboard({
                         <CardHeader className="pb-3">
                             <div className="flex items-center justify-between">
                                 <CardTitle className="text-lg font-semibold">Reservasi Mendatang</CardTitle>
-                                <ClipboardList className="h-5 w-5 text-gray-400" />
+                                <ClipboardList className="h-5 w-5 text-[#800000]" />
                             </div>
                             <CardDescription>Reservasi yang akan datang</CardDescription>
                         </CardHeader>
@@ -145,7 +145,7 @@ export default function Dashboard({
                             )}
                         </CardContent>
                         <CardFooter>
-                            <Button variant="ghost" size="sm" className="w-full" asChild>
+                            <Button variant="ghost" size="sm" className="w-full text-[#800000] hover:text-[#800000]/80 hover:bg-[#800000]/10" asChild>
                                 <a href={route('student.reservations.index')} className="flex items-center justify-center gap-2">
                                     Lihat Semua
                                     <ArrowRight className="h-4 w-4" />
@@ -159,7 +159,7 @@ export default function Dashboard({
                         <CardHeader className="pb-3">
                             <div className="flex items-center justify-between">
                                 <CardTitle className="text-lg font-semibold">Jadwal Hari Ini</CardTitle>
-                                <Calendar className="h-5 w-5 text-gray-400" />
+                                <Calendar className="h-5 w-5 text-[#800000]" />
                             </div>
                             <CardDescription>Jadwal lab untuk hari ini</CardDescription>
                         </CardHeader>
@@ -180,7 +180,7 @@ export default function Dashboard({
                             )}
                         </CardContent>
                         <CardFooter>
-                            <Button variant="ghost" size="sm" className="w-full" asChild>
+                            <Button variant="ghost" size="sm" className="w-full text-[#800000] hover:text-[#800000]/80 hover:bg-[#800000]/10" asChild>
                                 <a href={route('student.lab-schedules.index')} className="flex items-center justify-center gap-2">
                                     Lihat Semua
                                     <ArrowRight className="h-4 w-4" />
@@ -194,7 +194,7 @@ export default function Dashboard({
                         <CardHeader className="pb-3">
                             <div className="flex items-center justify-between">
                                 <CardTitle className="text-lg font-semibold">Notifikasi Terbaru</CardTitle>
-                                <Bell className="h-5 w-5 text-gray-400" />
+                                <Bell className="h-5 w-5 text-[#800000]" />
                             </div>
                             <CardDescription>Notifikasi yang belum dibaca</CardDescription>
                         </CardHeader>
@@ -213,7 +213,7 @@ export default function Dashboard({
                             )}
                         </CardContent>
                         <CardFooter>
-                            <Button variant="ghost" size="sm" className="w-full" asChild>
+                            <Button variant="ghost" size="sm" className="w-full text-[#800000] hover:text-[#800000]/80 hover:bg-[#800000]/10" asChild>
                                 <a href={route('student.notifications.index')} className="flex items-center justify-center gap-2">
                                     Lihat Semua
                                     <ArrowRight className="h-4 w-4" />
@@ -224,22 +224,22 @@ export default function Dashboard({
                 </div>
 
                 {/* Quick Actions */}
-                <div className="bg-white p-6 rounded-lg shadow-sm">
-                    <h2 className="text-lg font-semibold mb-4">Aksi Cepat</h2>
+                <div className="bg-white p-6 rounded-lg shadow-sm border">
+                    <h2 className="text-lg font-semibold mb-4 text-[#800000]">Aksi Cepat</h2>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <Button asChild>
+                        <Button className="bg-[#800000] hover:bg-[#800000]/90" asChild>
                             <a href={route('student.reservations.create')} className="flex items-center justify-center gap-2">
                                 <ClipboardList className="h-5 w-5" />
                                 Buat Reservasi
                             </a>
                         </Button>
-                        <Button variant="outline" asChild>
+                        <Button variant="outline" className="border-[#800000] text-[#800000] hover:bg-[#800000]/10" asChild>
                             <a href={route('student.lab-schedules.index')} className="flex items-center justify-center gap-2">
                                 <Calendar className="h-5 w-5" />
                                 Lihat Jadwal Lab
                             </a>
                         </Button>
-                        <Button variant="outline" asChild>
+                        <Button variant="outline" className="border-[#800000] text-[#800000] hover:bg-[#800000]/10" asChild>
                             <a href={route('student.notifications.index')} className="flex items-center justify-center gap-2">
                                 <Bell className="h-5 w-5" />
                                 Cek Notifikasi

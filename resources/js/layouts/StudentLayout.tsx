@@ -7,26 +7,18 @@ import {
     LogOut,
     Menu,
     X,
-    ChevronDown
+    ChevronDown,
+    User,
+    Settings
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { NotificationBell } from '@/components/NotificationBell';
-
-interface NavItem {
-    title: string;
-    href: string;
-    icon: React.ReactNode;
-    active: boolean;
-}
-
-interface Breadcrumb {
-    title: string;
-    href: string;
-}
+import { type BreadcrumbItem } from '@/types';
+import { Breadcrumbs } from '@/components/breadcrumbs';
 
 interface StudentLayoutProps {
     children: React.ReactNode;
-    breadcrumbs?: Breadcrumb[];
+    breadcrumbs?: BreadcrumbItem[];
 }
 
 interface User {
@@ -48,7 +40,13 @@ export default function StudentLayout({ children, breadcrumbs = [] }: StudentLay
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
 
-    const navItems: NavItem[] = [
+    // Ambil tanggal hari ini untuk header
+    const today = new Date();
+    const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+    const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+    const formattedDate = `${days[today.getDay()]}, ${today.getDate().toString().padStart(2, '0')}-${months[today.getMonth()]}-${today.getFullYear()}`;
+
+    const navItems = [
         {
             title: 'Dashboard',
             href: route('student.dashboard'),
@@ -67,7 +65,12 @@ export default function StudentLayout({ children, breadcrumbs = [] }: StudentLay
             icon: <Calendar className="h-5 w-5" />,
             active: route().current('student.lab-schedules.*'),
         },
-        // Notification removed from sidebar and moved to header
+        {
+            title: 'Pengaturan',
+            href: '/settings/profile',
+            icon: <Settings className="h-5 w-5" />,
+            active: route().current('profile.edit') || route().current('password.edit') || route().current('appearance'),
+        },
     ];
 
     return (
@@ -91,7 +94,7 @@ export default function StudentLayout({ children, breadcrumbs = [] }: StudentLay
                             onClick={() => setIsProfileOpen(!isProfileOpen)}
                             className="flex items-center space-x-2 focus:outline-none"
                         >
-                            <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white">
+                            <div className="w-8 h-8 rounded-full bg-[#800000] flex items-center justify-center text-white">
                                 {auth.user.name.charAt(0)}
                             </div>
                         </button>
@@ -102,7 +105,7 @@ export default function StudentLayout({ children, breadcrumbs = [] }: StudentLay
                                     <div className="text-gray-500">{auth.user.email}</div>
                                 </div>
                                 <Link
-                                    href={route('profile.edit')}
+                                    href="/settings/profile"
                                     className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                                 >
                                     Profile
@@ -121,21 +124,27 @@ export default function StudentLayout({ children, breadcrumbs = [] }: StudentLay
                 </div>
             </div>
 
-            {/* Sidebar */}
+            {/* Sidebar - updated styling to match app-layout */}
             <aside
                 className={cn(
-                    "fixed inset-y-0 left-0 z-20 w-64 bg-white border-r transform transition-transform duration-300 ease-in-out lg:translate-x-0",
+                    "fixed inset-y-0 left-0 z-20 w-64 bg-[#800000] transform transition-transform duration-300 ease-in-out lg:translate-x-0",
                     isSidebarOpen ? "translate-x-0" : "-translate-x-full"
                 )}
             >
-                <div className="flex flex-col h-full">
-                    {/* Sidebar header */}
-                    <div className="h-16 flex items-center justify-center border-b">
-                        <h1 className="text-xl font-bold text-blue-600">Reservasi Labs</h1>
+                <div className="flex flex-col h-full text-white">
+                    {/* Sidebar header with logo */}
+                    <div className="h-20 flex items-center justify-center border-b border-white/20 p-2">
+                        <div className="flex gap-2 items-center">
+                            <img src="/logouui.png" alt="UUI Logo" className="h-24 w-auto" />
+                            <h1 className="text-lg font-bold text-white mt-1">LAB FST-UUI</h1>
+                        </div>
                     </div>
 
                     {/* Navigation */}
-                    <nav className="flex-1 overflow-y-auto py-4">
+                    <div className="px-4 py-2 text-sm font-medium text-white/70 uppercase">
+                        MAIN NAVIGATION
+                    </div>
+                    <nav className="flex-1 overflow-y-auto py-2">
                         <ul className="space-y-1 px-2">
                             {navItems.map((item) => (
                                 <li key={item.title}>
@@ -144,8 +153,8 @@ export default function StudentLayout({ children, breadcrumbs = [] }: StudentLay
                                         className={cn(
                                             "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium",
                                             item.active
-                                                ? "bg-blue-50 text-blue-700"
-                                                : "text-gray-700 hover:bg-gray-100"
+                                                ? "bg-white/10 text-white"
+                                                : "text-white/80 hover:bg-white/10 hover:text-white"
                                         )}
                                     >
                                         {item.icon}
@@ -157,36 +166,37 @@ export default function StudentLayout({ children, breadcrumbs = [] }: StudentLay
                     </nav>
 
                     {/* User profile */}
-                    <div className="border-t p-4">
+                    <div className="mt-auto border-t border-white/20 p-4">
                         <div
                             className="flex items-center justify-between cursor-pointer"
                             onClick={() => setIsProfileOpen(!isProfileOpen)}
                         >
                             <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white">
+                                <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-[#800000]">
                                     {auth.user.name.charAt(0)}
                                 </div>
                                 <div>
-                                    <div className="text-sm font-medium">{auth.user.name}</div>
-                                    <div className="text-xs text-gray-500">Mahasiswa</div>
+                                    <div className="text-sm font-medium text-white">{auth.user.name}</div>
+                                    <div className="text-xs text-white/70">Mahasiswa</div>
                                 </div>
                             </div>
-                            <ChevronDown className="h-4 w-4 text-gray-500" />
+                            <ChevronDown className="h-4 w-4 text-white/70" />
                         </div>
 
                         {isProfileOpen && (
-                            <div className="mt-3 space-y-1 border-t pt-3">
+                            <div className="mt-3 space-y-1 border-t border-white/20 pt-3">
                                 <Link
-                                    href={route('profile.edit')}
-                                    className="flex items-center gap-2 px-2 py-1.5 text-sm text-gray-700 rounded-md hover:bg-gray-100"
+                                    href="/settings/profile"
+                                    className="flex items-center gap-2 px-2 py-1.5 text-sm text-white/80 rounded-md hover:bg-white/10 hover:text-white"
                                 >
+                                    <User className="h-4 w-4" />
                                     Profile
                                 </Link>
                                 <Link
                                     href={route('logout')}
                                     method="post"
                                     as="button"
-                                    className="flex w-full items-center gap-2 px-2 py-1.5 text-sm text-gray-700 rounded-md hover:bg-gray-100"
+                                    className="flex w-full items-center gap-2 px-2 py-1.5 text-sm text-white/80 rounded-md hover:bg-white/10 hover:text-white"
                                 >
                                     <LogOut className="h-4 w-4" />
                                     Logout
@@ -197,43 +207,36 @@ export default function StudentLayout({ children, breadcrumbs = [] }: StudentLay
                 </div>
             </aside>
 
-            {/* Main content */}
+            {/* Main content - updated to match app-layout style */}
             <div className="lg:pl-64">
-                <div className="lg:py-6 lg:px-8 pt-16 lg:pt-0">
-                    {/* Header with Breadcrumbs and Notification Bell */}
-                    <div className="mb-4 flex items-center justify-between">
-                        {breadcrumbs.length > 0 && (
-                            <nav className="hidden lg:block">
-                                <ol className="flex items-center space-x-2 text-sm text-gray-500">
-                                    {breadcrumbs.map((crumb, index) => (
-                                        <React.Fragment key={index}>
-                                            {index > 0 && <span>/</span>}
-                                            <li>
-                                                {index === breadcrumbs.length - 1 ? (
-                                                    <span className="font-medium text-gray-900">{crumb.title}</span>
-                                                ) : (
-                                                    <Link href={crumb.href} className="hover:text-blue-600">
-                                                        {crumb.title}
-                                                    </Link>
-                                                )}
-                                            </li>
-                                        </React.Fragment>
-                                    ))}
-                                </ol>
-                            </nav>
-                        )}
-                        <div className="ml-auto">
+                {/* Header with date, breadcrumbs and notification bell - styled like app-sidebar-header */}
+                <div className="bg-white border-b">
+                    <div className="flex items-center justify-between gap-4 px-6 py-4">
+                        {/* Left: Breadcrumbs */}
+                        <div className="flex items-center gap-4">
+                            {breadcrumbs.length > 0 && (
+                                <div className="flex items-center h-7">
+                                    <Breadcrumbs breadcrumbs={breadcrumbs} />
+                                </div>
+                            )}
+                        </div>
+                        {/* Right: Date and Notification */}
+                        <div className="flex items-center gap-4">
+                            <span className="text-xs font-semibold whitespace-nowrap text-[#800000] flex items-center h-7">
+                                {formattedDate}
+                            </span>
                             <NotificationBell
                                 href={route('student.notifications.index')}
-                                userId={auth.user.id}
-                                count={0}
+                                className="w-7 h-7 text-[#800000]"
                             />
                         </div>
                     </div>
-
-                    {/* Page content */}
-                    <main>{children}</main>
                 </div>
+
+                {/* Page content - styled like app-content */}
+                <main className="p-6">
+                    {children}
+                </main>
             </div>
         </div>
     );

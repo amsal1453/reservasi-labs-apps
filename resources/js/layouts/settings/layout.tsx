@@ -1,67 +1,84 @@
-import Heading from '@/components/heading';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { cn } from '@/lib/utils';
-import { type NavItem } from '@/types';
-import { Link } from '@inertiajs/react';
-import { type PropsWithChildren } from 'react';
+import { Link, usePage } from '@inertiajs/react';
+import { type ReactNode } from 'react';
+import { type SharedData } from '@/types';
 
-const sidebarNavItems: NavItem[] = [
-    {
-        title: 'Profile',
-        href: '/settings/profile',
-        icon: null,
-    },
-    {
-        title: 'Password',
-        href: '/settings/password',
-        icon: null,
-    },
-    {
-        title: 'Appearance',
-        href: '/settings/appearance',
-        icon: null,
-    },
-];
+export default function SettingsLayout({ children }: { children: ReactNode }) {
+    const { auth } = usePage<SharedData>().props;
+    const userRole = auth.user.role;
 
-export default function SettingsLayout({ children }: PropsWithChildren) {
-    // When server-side rendering, we only render the layout on the client...
-    if (typeof window === 'undefined') {
-        return null;
-    }
-
-    const currentPath = window.location.pathname;
+    // Tentukan route dashboard berdasarkan role
+    const getDashboardRoute = () => {
+        switch (userRole) {
+            case 'admin':
+                return route('admin.dashboard');
+            case 'lecturer':
+                return route('lecturer.dashboard');
+            case 'student':
+                return route('student.dashboard');
+            default:
+                return '/';
+        }
+    };
 
     return (
-        <div className="px-4 py-6">
-            <Heading title="Settings" description="Manage your profile and account settings" />
+        <div className="space-y-6 p-1">
+            <div className="flex items-center gap-4">
+                <Link
+                    href={getDashboardRoute()}
+                    className="inline-flex items-center gap-1 text-sm font-medium text-neutral-500 transition-colors hover:text-neutral-900"
+                >
+                    <span className="sr-only">Back to dashboard</span>
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="size-4"
+                    >
+                        <path d="m15 18-6-6 6-6" />
+                    </svg>
+                    Back
+                </Link>
+            </div>
 
-            <div className="flex flex-col space-y-8 lg:flex-row lg:space-y-0 lg:space-x-12">
-                <aside className="w-full max-w-xl lg:w-48">
-                    <nav className="flex flex-col space-y-1 space-x-0">
-                        {sidebarNavItems.map((item, index) => (
-                            <Button
-                                key={`${item.href}-${index}`}
-                                size="sm"
-                                variant="ghost"
-                                asChild
-                                className={cn('w-full justify-start', {
-                                    'bg-muted': currentPath === item.href,
-                                })}
-                            >
-                                <Link href={item.href} prefetch>
-                                    {item.title}
-                                </Link>
-                            </Button>
-                        ))}
+            <div className="flex flex-col space-y-8 lg:flex-row lg:space-x-12 lg:space-y-0">
+                <aside className="-mx-4 lg:w-1/5">
+                    <nav className="flex space-x-2 lg:flex-col lg:space-x-0 lg:space-y-1">
+                        <Link
+                            href={route('profile.edit')}
+                            className={`${route().current('profile.edit')
+                                    ? 'bg-neutral-100 text-neutral-900'
+                                    : 'text-neutral-600 hover:text-neutral-900'
+                                } flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all`}
+                        >
+                            Profile
+                        </Link>
+                        <Link
+                            href={route('password.edit')}
+                            className={`${route().current('password.edit')
+                                    ? 'bg-neutral-100 text-neutral-900'
+                                    : 'text-neutral-600 hover:text-neutral-900'
+                                } flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all`}
+                        >
+                            Password
+                        </Link>
+                        <Link
+                            href={route('appearance')}
+                            className={`${route().current('appearance')
+                                    ? 'bg-neutral-100 text-neutral-900'
+                                    : 'text-neutral-600 hover:text-neutral-900'
+                                } flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all`}
+                        >
+                            Appearance
+                        </Link>
                     </nav>
                 </aside>
-
-                <Separator className="my-6 md:hidden" />
-
-                <div className="flex-1 md:max-w-2xl">
-                    <section className="max-w-xl space-y-12">{children}</section>
-                </div>
+                <div className="flex-1 lg:max-w-2xl">{children}</div>
             </div>
         </div>
     );

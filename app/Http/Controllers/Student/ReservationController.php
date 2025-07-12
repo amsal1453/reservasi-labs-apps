@@ -134,4 +134,39 @@ class ReservationController extends Controller
             'reservation' => $reservation->load('lab'),
         ]);
     }
+
+    /**
+     * Hapus reservasi
+     *
+     * @param Reservation $reservation
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function destroy(Reservation $reservation)
+    {
+        // Cek apakah reservasi milik user yang login
+        abort_if($reservation->user_id !== Auth::id(), 403);
+
+        // Hanya bisa menghapus reservasi dengan status pending
+        if ($reservation->status !== 'pending') {
+            return redirect()->route('student.reservations.index')
+                ->with('error', 'Hanya reservasi dengan status menunggu persetujuan yang dapat dihapus.');
+        }
+
+        try {
+            $reservation->delete();
+
+            return redirect()->route('student.reservations.index')
+                ->with('success', 'Reservasi berhasil dihapus.');
+        } catch (\Exception $e) {
+            Log::error('Error deleting reservation', [
+                'user_id' => Auth::id(),
+                'reservation_id' => $reservation->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return redirect()->route('student.reservations.index')
+                ->with('error', 'Terjadi kesalahan saat menghapus reservasi.');
+        }
+    }
 }
