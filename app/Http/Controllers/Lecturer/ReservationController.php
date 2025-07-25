@@ -12,6 +12,7 @@ use App\Notifications\ReservationSubmittedNotification;
 use App\Services\ReservationNotificationService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
 
 class ReservationController extends Controller
 {
@@ -35,6 +36,7 @@ class ReservationController extends Controller
     {
         $reservations = Reservation::with('lab')
             ->where('user_id', Auth::id())
+            ->where('status', '!=', 'cancelled')
             ->latest()
             ->get();
 
@@ -57,7 +59,7 @@ class ReservationController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'day'         => 'required|in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday',
+            'day'         => 'required|in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday',
             'date'        => 'required|date',
             'start_time'  => 'required|date_format:H:i',
             'end_time'    => 'required|date_format:H:i|after:start_time',
@@ -148,7 +150,7 @@ class ReservationController extends Controller
         abort_if($reservation->user_id !== Auth::id(), 403);
 
         $request->validate([
-            'day'         => 'required|in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday',
+            'day'         => 'required|in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday',
             'date'        => 'required|date',
             'start_time'  => 'required|date_format:H:i',
             'end_time'    => 'required|date_format:H:i|after:start_time',
@@ -209,39 +211,207 @@ class ReservationController extends Controller
     }
 
     // Batalkan reservasi
-    public function cancel(Reservation $reservation)
+    public function destroy(Reservation $reservation)
     {
         abort_if($reservation->user_id !== Auth::id(), 403);
 
-        if ($reservation->status === 'cancelled') {
-            return back()->with('error', 'Reservasi ini sudah dibatalkan sebelumnya.');
-        }
-
         try {
-            $reservation->update(['status' => 'cancelled']);
+            // Hapus reservasi secara permanen
+            $reservation->delete();
 
-            // Notify admins about the cancellation
-            $admins = User::role('admin')->get();
-
-            // Send in-app notifications
-            foreach ($admins as $admin) {
-                $admin->notify(new ReservationSubmittedNotification($reservation));
-            }
-
-            // Send email notifications about cancellation
-            $this->notificationService->sendRequestNotificationsToAdmins($reservation);
+            // Notify admins about the cancellation (optional, maybe change to "deleted")
+            // For now, let's keep it simple and just delete.
+            // You can add notifications if needed.
 
             return redirect()->route('lecturer.reservations.index')
-                ->with('success', 'Reservasi berhasil dibatalkan.');
+                ->with('success', 'Reservasi berhasil dihapus.');
         } catch (\Exception $e) {
-            Log::error('Error cancelling reservation', [
+            Log::error('Error deleting reservation', [
                 'reservation_id' => $reservation->id,
                 'error' => $e->getMessage()
             ]);
 
             return back()->withErrors([
-                'error' => 'Terjadi kesalahan saat membatalkan reservasi.'
+                'error' => 'Terjadi kesalahan saat menghapus reservasi.'
             ]);
+        }
+    }
+
+    // Generate PDF for lecturer's reservations
+    public function generatePdf()
+    {
+        try {
+            // Get current lecturer's reservations
+            $reservations = Reservation::with(['lab', 'user'])
+                ->where('user_id', Auth::id())
+                ->orderBy('date')
+                ->orderBy('start_time')
+                ->get();
+
+            // Get lecturer name
+            $lecturerName = Auth::user()->name;
+
+            // Group reservations by status
+            $reservationsByStatus = $reservations->groupBy('status');
+
+            // Define status translations
+            $statusTranslations = [
+                'pending' => 'Menunggu Persetujuan',
+                'approved' => 'Disetujui',
+                'rejected' => 'Ditolak',
+                'cancelled' => 'Dibatalkan'
+            ];
+
+            // Generate HTML
+            $html = '<!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="utf-8">
+                <title>Daftar Reservasi Laboratorium</title>
+                <style>
+                    body {
+                        font-family: Arial, sans-serif;
+                        margin: 15px;
+                        font-size: 10px;
+                        line-height: 1.2;
+                    }
+                    .header {
+                        text-align: center;
+                        margin-bottom: 20px;
+                    }
+                    .header h1 {
+                        font-size: 14px;
+                        font-weight: bold;
+                        margin: 2px 0;
+                    }
+                    .header h2 {
+                        font-size: 12px;
+                        font-weight: bold;
+                        margin: 2px 0;
+                    }
+                    .header h3 {
+                        font-size: 11px;
+                        font-weight: bold;
+                        margin: 2px 0;
+                    }
+                    table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        margin: 10px 0;
+                        font-size: 9px;
+                    }
+                    table, th, td {
+                        border: 1px solid #000;
+                    }
+                    th {
+                        background-color: #e0e0e0;
+                        padding: 4px;
+                        text-align: center;
+                        font-weight: bold;
+                        font-size: 9px;
+                    }
+                    td {
+                        padding: 3px;
+                        text-align: left;
+                        font-size: 8px;
+                        vertical-align: middle;
+                    }
+                    .status-header {
+                        background-color: #f0f0f0;
+                        font-weight: bold;
+                        font-size: 11px;
+                        padding: 6px;
+                        margin-top: 15px;
+                        margin-bottom: 5px;
+                        border: 1px solid #000;
+                    }
+                    .footer {
+                        margin-top: 15px;
+                        font-size: 8px;
+                        text-align: left;
+                    }
+                    .no-data {
+                        text-align: center;
+                        padding: 10px;
+                        font-style: italic;
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <h1>DAFTAR RESERVASI LABORATORIUM</h1>
+                    <h2>UNIVERSITAS UBUDIYAH INDONESIA</h2>
+                    <h3>DOSEN: ' . strtoupper($lecturerName) . '</h3>
+                    <p>Tanggal Cetak: ' . Carbon::now()->format('d-m-Y H:i') . '</p>
+                </div>';
+
+            // If no reservations found
+            if ($reservations->isEmpty()) {
+                $html .= '<div class="no-data">Tidak ada data reservasi yang tersedia.</div>';
+            } else {
+                // Loop through each status group
+                foreach ($statusTranslations as $status => $statusLabel) {
+                    if (isset($reservationsByStatus[$status]) && $reservationsByStatus[$status]->count() > 0) {
+                        $html .= '<div class="status-header">' . $statusLabel . ' (' . $reservationsByStatus[$status]->count() . ')</div>';
+
+                        $html .= '<table>
+                            <tr>
+                                <th>No</th>
+                                <th>Tanggal</th>
+                                <th>Waktu</th>
+                                <th>Lab</th>
+                                <th>Tujuan</th>
+                                <th>Status</th>
+                            </tr>';
+
+                        $counter = 1;
+                        foreach ($reservationsByStatus[$status] as $reservation) {
+                            // Format date to Indonesian format
+                            $date = Carbon::parse($reservation->date)->format('d-m-Y');
+                            $day = Carbon::parse($reservation->date)->locale('id')->isoFormat('dddd');
+
+                            $html .= '<tr>
+                                <td style="text-align: center;">' . $counter . '</td>
+                                <td>' . $day . ', ' . $date . '</td>
+                                <td>' . substr($reservation->start_time, 0, 5) . ' - ' . substr($reservation->end_time, 0, 5) . '</td>
+                                <td>' . $reservation->lab->name . '</td>
+                                <td>' . $reservation->purpose . '</td>
+                                <td style="text-align: center;">' . $statusLabel . '</td>
+                            </tr>';
+
+                            $counter++;
+                        }
+
+                        $html .= '</table>';
+                    }
+                }
+            }
+
+            $html .= '
+                <div class="footer">
+                    <p>Catatan: Dokumen ini dicetak secara otomatis dari sistem Reservasi Lab FST-UUI</p>
+                </div>
+            </body>
+            </html>';
+
+            // Configure DomPDF
+            $options = new \Dompdf\Options();
+            $options->set('isHtml5ParserEnabled', true);
+            $options->set('isRemoteEnabled', true);
+
+            $dompdf = new \Dompdf\Dompdf($options);
+            $dompdf->loadHtml($html);
+            $dompdf->setPaper('a4', 'landscape');
+            $dompdf->render();
+
+            // Download PDF
+            return response($dompdf->output())
+                ->header('Content-Type', 'application/pdf')
+                ->header('Content-Disposition', 'attachment; filename="Reservasi_Saya.pdf"');
+        } catch (\Exception $e) {
+            // Log error
+            Log::error('Error generating reservation PDF: ' . $e->getMessage());
+            return response('Tidak dapat mencetak daftar reservasi. Error: ' . $e->getMessage(), 500);
         }
     }
 }

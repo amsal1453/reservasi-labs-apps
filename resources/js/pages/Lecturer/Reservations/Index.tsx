@@ -108,8 +108,8 @@ export default function Index({ reservations }: PageProps) {
                                     </Link>
                                 )}
                                 {(reservation.status === 'pending' || reservation.status === 'approved') && (
-                                    <Link href={route('lecturer.reservations.cancel', reservation.id)} method="post" as="button">
-                                        <Button variant="destructive" size="sm">Batalkan</Button>
+                                    <Link href={route('lecturer.reservations.destroy', reservation.id)} method="delete" as="button">
+                                        <Button variant="destructive" size="sm">Hapus</Button>
                                     </Link>
                                 )}
                             </CardFooter>

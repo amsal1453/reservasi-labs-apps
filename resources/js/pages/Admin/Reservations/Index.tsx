@@ -1,5 +1,5 @@
 import { Head, Link } from '@inertiajs/react';
-import { CheckCircle2, XCircle } from 'lucide-react';
+import { CheckCircle2, XCircle, Printer } from 'lucide-react';
 
 import AppLayout from '@/layouts/app-layout';
 import { Button } from '@/components/ui/button';
@@ -71,6 +71,21 @@ export default function Index({ reservations }: Props) {
             <div className="container py-12">
                 <div className="flex justify-between items-center mb-6">
                     <h1 className="text-2xl font-bold">Kelola Reservasi</h1>
+                    <div className="flex gap-2">
+                        <a
+                            href={route('admin.reservations.pdf')}
+                            target="_blank"
+                            className="inline-flex items-center justify-center rounded-md text-sm font-medium bg-red-500 text-white hover:bg-red-600 h-10 px-4 py-2"
+                        >
+                            <Printer className="w-4 h-4 mr-2" />
+                            Cetak Reservasi
+                        </a>
+                        <Link href={route('admin.lab-manager.index')}>
+                            <Button variant="outline">
+                                Lihat Jadwal Lab
+                            </Button>
+                        </Link>
+                    </div>
                 </div>
 
                 <Card>

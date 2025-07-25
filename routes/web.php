@@ -27,14 +27,15 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 
     Route::resource('schedules', ScheduleController::class);
 
-    Route::get('schedules/pdf/{lab_id}', [PdfController::class, 'generateSchedulePdf'])->name('schedules.pdf');
-
     Route::get('lab-manager', [LabManagerController::class, 'index'])->name('lab-manager.index');
 
     Route::get('/reservations', [ReservationController::class, 'index'])->name('reservations.index');
+    Route::get('/reservations/pdf/{lab_id?}', [PdfController::class, 'generateReservationPdf'])->name('reservations.pdf');
     Route::get('/reservations/{reservation}', [ReservationController::class, 'show'])->name('reservations.show');
     Route::post('/reservations/{reservation}/approve', [ReservationController::class, 'approve'])->name('reservations.approve');
     Route::post('/reservations/{reservation}/reject', [ReservationController::class, 'reject'])->name('reservations.reject');
+    Route::get('schedules/pdf/{lab_id}', [PdfController::class, 'generateSchedulePdf'])->name('schedules.pdf');
+    Route::get('labs/pdf/{lab_id}', [PdfController::class, 'generateCombinedPdf'])->name('labs.pdf');
 
     Route::resource('users', UserController::class);
 
@@ -48,7 +49,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 });
 
 Route::middleware(['auth', 'role:lecturer'])->prefix('lecturer')->name('lecturer.')->group(function () {
-    
+
     Route::get('dashboard', [App\Http\Controllers\Lecturer\DashboardController::class, 'index'])->name('dashboard');
 
     // Reservation routes
@@ -64,8 +65,7 @@ Route::middleware(['auth', 'role:lecturer'])->prefix('lecturer')->name('lecturer
         ->name('reservations.edit');
     Route::put('/reservations/{reservation}', [App\Http\Controllers\Lecturer\ReservationController::class, 'update'])
         ->name('reservations.update');
-    Route::post('/reservations/{reservation}/cancel', [App\Http\Controllers\Lecturer\ReservationController::class, 'cancel'])
-        ->name('reservations.cancel');
+    Route::delete('/reservations/{reservation}', [App\Http\Controllers\Lecturer\ReservationController::class, 'destroy'])->name('reservations.destroy');
 
     Route::get('/lab-schedules', [App\Http\Controllers\Lecturer\LabScheduleController::class, 'index'])
         ->name('lab-schedules.index');

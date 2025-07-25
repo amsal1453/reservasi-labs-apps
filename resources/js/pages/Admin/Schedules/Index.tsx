@@ -304,12 +304,12 @@ export default function Index({ schedules, selectedLab, import_errors, message }
                                 {/* Link untuk cetak jadwal */}
                                 {selectedLab && selectedLab.id && (
                                     <a
-                                        href={route('admin.schedules.pdf', { lab_id: selectedLab.id })}
+                                        href={route('admin.labs.pdf', { lab_id: selectedLab.id })}
                                         target="_blank"
-                                        className="inline-flex items-center justify-center rounded-md text-sm font-medium bg-red-500 text-white hover:bg-red-600 h-10 px-4 py-2"
+                                        className="inline-flex items-center justify-center rounded-md text-sm font-medium bg-purple-500 text-white hover:bg-purple-600 h-10 px-4 py-2"
                                     >
                                         <Printer className="w-4 h-4 mr-2" />
-                                        Cetak Jadwal
+                                        Cetak PDF
                                     </a>
                                 )}
                             </>
