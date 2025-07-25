@@ -67,20 +67,44 @@ class ReservationController extends Controller
             'lab_id'      => 'required|exists:labs,id',
         ]);
 
-        // Cek bentrok di lab
-        $conflict = Reservation::where('lab_id', $request->lab_id)
+        // Cek bentrok dengan reservasi yang sudah disetujui
+        $approvedConflict = Reservation::where('lab_id', $request->lab_id)
             ->where('day', $request->day)
-            ->whereIn('status', ['pending', 'approved'])
+            ->where('status', 'approved')
             ->where(function ($query) use ($request) {
-                $query->whereBetween('start_time', [$request->start_time, $request->end_time])
-                    ->orWhereBetween('end_time', [$request->start_time, $request->end_time]);
+            $query->where(function ($q) use ($request) {
+                $q->where('start_time', '<', $request->end_time)
+                    ->where('end_time', '>', $request->start_time);
+            });
             })
             ->exists();
 
-        if ($conflict) {
+        if ($approvedConflict) {
             return back()->withErrors([
-                'conflict' => 'Slot waktu ini sudah terisi di lab tersebut.',
+                'conflict' => 'Slot waktu ini sudah terisi dengan reservasi yang disetujui di lab tersebut.',
             ])->withInput();
+        }
+
+        // Cek bentrok dengan reservasi yang masih pending
+        $pendingConflict = Reservation::where('lab_id', $request->lab_id)
+            ->where('day', $request->day)
+            ->where('status', 'pending')
+            ->where(function ($query) use ($request) {
+                $query->where(function ($q) use ($request) {
+                    $q->where('start_time', '<', $request->end_time)
+                        ->where('end_time', '>', $request->start_time);
+                });
+            })
+            ->first();
+
+        if ($pendingConflict) {
+            // Ambil nama dosen yang sudah reservasi
+            $pendingUser = User::find($pendingConflict->user_id);
+            $dosenName = $pendingUser ? $pendingUser->name : 'Dosen lain';
+
+            return back()->withErrors([
+                'pendingConflict' => "Perhatian: {$dosenName} sudah mengajukan reservasi untuk slot waktu ini (status: menunggu persetujuan). Anda tetap dapat melanjutkan, namun hanya satu reservasi yang akan disetujui.",
+            ])->withInput()->with('showPendingWarning', true);
         }
 
         try {
@@ -158,21 +182,46 @@ class ReservationController extends Controller
             'lab_id'      => 'required|exists:labs,id',
         ]);
 
-        // Cek bentrok di lab (kecuali dengan reservasi ini sendiri)
-        $conflict = Reservation::where('lab_id', $request->lab_id)
+        // Cek bentrok di lab dengan reservasi yang disetujui (kecuali dengan reservasi ini sendiri)
+        $approvedConflict = Reservation::where('lab_id', $request->lab_id)
             ->where('day', $request->day)
             ->where('id', '!=', $reservation->id)
-            ->whereIn('status', ['pending', 'approved'])
+            ->where('status', 'approved')
             ->where(function ($query) use ($request) {
-                $query->whereBetween('start_time', [$request->start_time, $request->end_time])
-                    ->orWhereBetween('end_time', [$request->start_time, $request->end_time]);
+            $query->where(function ($q) use ($request) {
+                $q->where('start_time', '<', $request->end_time)
+                    ->where('end_time', '>', $request->start_time);
+            });
             })
             ->exists();
 
-        if ($conflict) {
+        if ($approvedConflict) {
             return back()->withErrors([
-                'conflict' => 'Slot waktu ini sudah terisi di lab tersebut.',
+                'conflict' => 'Slot waktu ini sudah terisi dengan reservasi yang disetujui di lab tersebut.',
             ])->withInput();
+        }
+
+        // Cek bentrok dengan reservasi yang masih pending
+        $pendingConflict = Reservation::where('lab_id', $request->lab_id)
+            ->where('day', $request->day)
+            ->where('id', '!=', $reservation->id)
+            ->where('status', 'pending')
+            ->where(function ($query) use ($request) {
+                $query->where(function ($q) use ($request) {
+                    $q->where('start_time', '<', $request->end_time)
+                        ->where('end_time', '>', $request->start_time);
+                });
+            })
+            ->first();
+
+        if ($pendingConflict) {
+            // Ambil nama dosen yang sudah reservasi
+            $pendingUser = User::find($pendingConflict->user_id);
+            $dosenName = $pendingUser ? $pendingUser->name : 'Dosen lain';
+
+            return back()->withErrors([
+                'pendingConflict' => "Perhatian: {$dosenName} sudah mengajukan reservasi untuk slot waktu ini (status: menunggu persetujuan). Anda tetap dapat melanjutkan, namun hanya satu reservasi yang akan disetujui.",
+            ])->withInput()->with('showPendingWarning', true);
         }
 
         try {
@@ -390,6 +439,19 @@ class ReservationController extends Controller
             $html .= '
                 <div class="footer">
                     <p>Catatan: Dokumen ini dicetak secara otomatis dari sistem Reservasi Lab FST-UUI</p>
+
+                    <table style="width: 100%; border: none; margin-top: 50px;">
+                        <tr style="border: none;">
+                            <td style="width: 60%; border: none;"></td>
+                            <td style="width: 40%; border: none; text-align: center;">
+                                Banda Aceh, ' . Carbon::now()->format('d-m-Y') . '<br>
+                                Mengetahui<br>
+                                Kepala Laboratorium FST<br><br><br><br><br>
+                                <b><u>MUCHSIN</u></b><br>
+                                NIDN. 19283746502
+                            </td>
+                        </tr>
+                    </table>
                 </div>
             </body>
             </html>';

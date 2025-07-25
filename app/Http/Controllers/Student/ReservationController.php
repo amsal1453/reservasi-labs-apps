@@ -66,24 +66,44 @@ class ReservationController extends Controller
             'lab_id'        => 'required|exists:labs,id',
         ]);
 
-        // Cek bentrok reservasi/lab
-        $conflict = Reservation::where('lab_id', $request->lab_id)
+        // Cek bentrok dengan reservasi yang sudah disetujui
+        $approvedConflict = Reservation::where('lab_id', $request->lab_id)
             ->where('day', $request->day)
-            ->whereIn('status', ['pending', 'approved'])
+            ->where('status', 'approved')
             ->where(function ($query) use ($request) {
-                $query->whereBetween('start_time', [$request->start_time, $request->end_time])
-                ->orWhereBetween('end_time', [$request->start_time, $request->end_time])
-                ->orWhere(function ($q) use ($request) {
-                    $q->where('start_time', '<=', $request->start_time)
-                        ->where('end_time', '>=', $request->end_time);
+            $query->where(function ($q) use ($request) {
+                $q->where('start_time', '<', $request->end_time)
+                    ->where('end_time', '>', $request->start_time);
                 });
             })
             ->exists();
 
-        if ($conflict) {
+        if ($approvedConflict) {
             return back()->withErrors([
-                'conflict' => 'Waktu yang dipilih sudah terisi. Silakan pilih slot lain.',
+                'conflict' => 'Slot waktu ini sudah terisi dengan reservasi yang disetujui di lab tersebut.',
             ])->withInput();
+        }
+
+        // Cek bentrok dengan reservasi yang masih pending
+        $pendingConflict = Reservation::where('lab_id', $request->lab_id)
+            ->where('day', $request->day)
+            ->where('status', 'pending')
+            ->where(function ($query) use ($request) {
+                $query->where(function ($q) use ($request) {
+                    $q->where('start_time', '<', $request->end_time)
+                        ->where('end_time', '>', $request->start_time);
+                });
+            })
+            ->first();
+
+        if ($pendingConflict) {
+            // Ambil nama user yang sudah reservasi
+            $pendingUser = User::find($pendingConflict->user_id);
+            $userName = $pendingUser ? $pendingUser->name : 'User lain';
+
+            return back()->withErrors([
+                'pendingConflict' => "Perhatian: {$userName} sudah mengajukan reservasi untuk slot waktu ini (status: menunggu persetujuan). Anda tetap dapat melanjutkan, namun hanya satu reservasi yang akan disetujui.",
+            ])->withInput()->with('showPendingWarning', true);
         }
 
         try {

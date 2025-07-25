@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Redirect;
+use App\Models\User;
 
 class ReservationController extends Controller
 {
@@ -103,20 +104,67 @@ class ReservationController extends Controller
         DB::beginTransaction();
 
         try {
-            // Cek bentrok jadwal
-            $conflict = Schedule::where('day', $reservation->day)
+            // Cek bentrok jadwal dengan detail lebih lengkap
+            $conflictingSchedules = Schedule::where('day', $reservation->day)
                 ->where('lab_id', $reservation->lab_id)
                 ->where(function ($query) use ($reservation) {
                 $query->where(function ($q) use ($reservation) {
                     $q->where('start_time', '<', $reservation->end_time)
                         ->where('end_time', '>', $reservation->start_time);
                 });
-                })->exists();
+                })
+                ->get();
 
-            if ($conflict) {
+            if ($conflictingSchedules->count() > 0) {
+                $conflictMessage = 'Tidak dapat menyetujui reservasi karena jadwal bentrok dengan:';
+                foreach ($conflictingSchedules as $schedule) {
+                    $conflictMessage .= "\n- " . $schedule->course_name . " ({$schedule->start_time} - {$schedule->end_time})";
+                }
+
                 return back()->withErrors([
-                    'error' => 'Tidak dapat menyetujui reservasi karena jadwal bentrok.'
+                    'error' => $conflictMessage
                 ]);
+            }
+
+            // Cek apakah ada reservasi pending lain dengan waktu yang sama
+            $pendingConflicts = Reservation::where('id', '!=', $reservation->id)
+                ->where('lab_id', $reservation->lab_id)
+                ->where('day', $reservation->day)
+                ->where('status', 'pending')
+                ->where(function ($query) use ($reservation) {
+                    $query->where(function ($q) use ($reservation) {
+                        $q->where('start_time', '<', $reservation->end_time)
+                            ->where('end_time', '>', $reservation->start_time);
+                    });
+                })
+                ->get();
+
+            if ($pendingConflicts->count() > 0) {
+                // Kita tetap setujui, tapi berikan peringatan bahwa ada konflik dengan reservasi pending lain
+                $pendingMessage = 'Perhatian: Terdapat ' . $pendingConflicts->count() . ' reservasi pending lain dengan waktu yang sama. ';
+                $pendingMessage .= 'Reservasi ini akan disetujui, tetapi perhatikan konflik berikut:';
+
+                foreach ($pendingConflicts as $conflict) {
+                    $lecturer = User::find($conflict->user_id);
+                    $lecturerName = $lecturer ? $lecturer->name : 'Unknown';
+                    $pendingMessage .= "\n- {$lecturerName}: {$conflict->purpose} ({$conflict->start_time} - {$conflict->end_time})";
+                }
+
+                // Tolak semua reservasi yang bentrok
+                foreach ($pendingConflicts as $conflict) {
+                    $conflict->update([
+                        'status' => 'rejected',
+                        'admin_notes' => 'Ditolak secara otomatis karena bentrok dengan reservasi yang telah disetujui.',
+                        'reviewed_by' => Auth::id(),
+                        'reviewed_at' => now(),
+                    ]);
+
+                    // Notifikasi untuk dosen yang reservasinya ditolak
+                    $conflictUser = User::find($conflict->user_id);
+                    $rejectMessage = "Reservasi Anda untuk {$conflict->lab->name} ditolak karena bentrok dengan reservasi lain yang telah disetujui.";
+                    $conflictUser->notify(new ReservationStatusNotificationInApp($conflict, 'rejected', $rejectMessage));
+                    $this->notificationService->sendStatusNotificationToUser($conflict, 'rejected', $rejectMessage);
+                }
             }
 
             // Update status
@@ -148,8 +196,13 @@ class ReservationController extends Controller
 
             DB::commit();
 
+            $successMessage = 'Reservasi berhasil disetujui';
+            if (isset($pendingMessage)) {
+                $successMessage .= ', namun perhatikan bahwa ada reservasi lain yang ditolak karena bentrok.';
+            }
+
             return Redirect::route('admin.reservations.index')
-                ->with('message', 'Reservasi berhasil disetujui');
+                ->with('message', $successMessage);
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Error approving reservation', [

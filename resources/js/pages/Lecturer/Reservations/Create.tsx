@@ -9,6 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { FormError } from '@/components/form-error';
 import InputError from '@/components/input-error';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
 
 interface Lab {
     id: number;
@@ -20,10 +22,14 @@ interface Lab {
 
 interface PageProps {
     labs: Lab[];
+    errors?: {
+        pendingConflict?: string;
+        conflict?: string;
+    };
 }
 
-export default function Create({ labs }: PageProps) {
-    const { data, setData, post, processing, errors } = useForm({
+export default function Create({ labs, errors }: PageProps) {
+    const { data, setData, post, processing, errors: formErrors } = useForm({
         lab_id: '',
         day: '',
         date: '',
@@ -73,6 +79,22 @@ export default function Create({ labs }: PageProps) {
             <Head title="Buat Reservasi Lab" />
 
             <div className="max-w-3xl mx-auto">
+                {errors?.pendingConflict && (
+                    <Alert className="mb-6 bg-yellow-50 text-yellow-800 border-yellow-200">
+                        <AlertCircle className="h-4 w-4 text-yellow-800" />
+                        <AlertTitle>Perhatian</AlertTitle>
+                        <AlertDescription>{errors.pendingConflict}</AlertDescription>
+                    </Alert>
+                )}
+
+                {errors?.conflict && (
+                    <Alert className="mb-6 bg-red-50 text-red-800 border-red-200">
+                        <AlertCircle className="h-4 w-4 text-red-800" />
+                        <AlertTitle>Error</AlertTitle>
+                        <AlertDescription>{errors.conflict}</AlertDescription>
+                    </Alert>
+                )}
+
                 <Card>
                     <CardHeader>
                         <CardTitle>Buat Reservasi Lab</CardTitle>
@@ -99,7 +121,7 @@ export default function Create({ labs }: PageProps) {
                                         ))}
                                     </SelectContent>
                                 </Select>
-                                <FormError message={errors.lab_id} />
+                                <FormError message={formErrors.lab_id} />
                             </div>
 
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -112,7 +134,7 @@ export default function Create({ labs }: PageProps) {
                                         onChange={handleDateChange}
                                         className="block w-full"
                                     />
-                                    <InputError message={errors.date} />
+                                    <InputError message={formErrors.date} />
                                 </div>
 
                                 <div>
@@ -125,7 +147,7 @@ export default function Create({ labs }: PageProps) {
                                         className="block w-full bg-gray-50"
                                     />
                                     <input type="hidden" id="day" value={data.day} />
-                                    <InputError message={errors.day} />
+                                    <InputError message={formErrors.day} />
                                 </div>
                             </div>
 
@@ -138,7 +160,7 @@ export default function Create({ labs }: PageProps) {
                                         value={data.start_time}
                                         onChange={(e) => setData('start_time', e.target.value)}
                                     />
-                                    <FormError message={errors.start_time} />
+                                    <FormError message={formErrors.start_time} />
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="end_time">Waktu Selesai</Label>
@@ -148,7 +170,7 @@ export default function Create({ labs }: PageProps) {
                                         value={data.end_time}
                                         onChange={(e) => setData('end_time', e.target.value)}
                                     />
-                                    <FormError message={errors.end_time} />
+                                    <FormError message={formErrors.end_time} />
                                 </div>
                             </div>
 
@@ -161,7 +183,7 @@ export default function Create({ labs }: PageProps) {
                                     onChange={(e) => setData('purpose', e.target.value)}
                                     rows={4}
                                 />
-                                <FormError message={errors.purpose} />
+                                <FormError message={formErrors.purpose} />
                             </div>
                         </CardContent>
                         <CardFooter className="flex justify-between">

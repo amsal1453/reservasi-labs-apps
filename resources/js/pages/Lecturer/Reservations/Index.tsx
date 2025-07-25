@@ -6,6 +6,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
 
 interface Lab {
     id: number;
@@ -35,9 +37,16 @@ interface Reservation {
 
 interface PageProps {
     reservations: Reservation[];
+    flash?: {
+        success?: string;
+        error?: string;
+    };
+    errors?: {
+        pendingConflict?: string;
+    };
 }
 
-export default function Index({ reservations }: PageProps) {
+export default function Index({ reservations, flash = {}, errors }: PageProps) {
     const getStatusBadge = (status: string) => {
         switch (status) {
             case 'pending':
@@ -69,6 +78,30 @@ export default function Index({ reservations }: PageProps) {
             { title: 'Reservasi Lab', href: route('lecturer.reservations.index') },
         ]}>
             <Head title="Reservasi Lab" />
+
+            {flash?.success && (
+                <Alert className="mb-6 bg-green-50 text-green-800 border-green-200">
+                    <AlertCircle className="h-4 w-4 text-green-800" />
+                    <AlertTitle>Sukses</AlertTitle>
+                    <AlertDescription>{flash.success}</AlertDescription>
+                </Alert>
+            )}
+
+            {flash?.error && (
+                <Alert className="mb-6 bg-red-50 text-red-800 border-red-200">
+                    <AlertCircle className="h-4 w-4 text-red-800" />
+                    <AlertTitle>Error</AlertTitle>
+                    <AlertDescription>{flash.error}</AlertDescription>
+                </Alert>
+            )}
+
+            {errors?.pendingConflict && (
+                <Alert className="mb-6 bg-yellow-50 text-yellow-800 border-yellow-200">
+                    <AlertCircle className="h-4 w-4 text-yellow-800" />
+                    <AlertTitle>Perhatian</AlertTitle>
+                    <AlertDescription>{errors.pendingConflict}</AlertDescription>
+                </Alert>
+            )}
 
             <div className="flex justify-between items-center mb-6">
                 <h3 className="text-lg font-medium">Daftar Reservasi</h3>

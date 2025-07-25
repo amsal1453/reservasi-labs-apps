@@ -203,7 +203,19 @@ class PdfController extends Controller
             $html .= '</table>
 
                 <div class="footer">
-                    Ket: Penggunaan Lab. Komputer di luar jadwal, agar menghubungi petugas
+                    <p>Ket: Penggunaan Lab. Komputer di luar jadwal, agar menghubungi petugas</p>
+
+                    <table style="width: 100%; border: none; margin-top: 50px;">
+                        <tr style="border: none;">
+                            <td style="width: 60%; border: none;"></td>
+                            <td style="width: 40%; border: none; text-align: center;">
+                                Banda Aceh, ' . Carbon::now()->format('d-m-Y') . '<br>
+                                Mengetahui<br>
+                                Kepala Laboratorium FST<br><br><br><br><br>
+                                <b><u>MUCHSIN</u></b><br>
+                            </td>
+                        </tr>
+                    </table>
                 </div>
             </body>
             </html>';
@@ -390,9 +402,18 @@ class PdfController extends Controller
 
             $html .= '
                 <div class="footer">
-                    <p>Diketahui Kepala LAB FST
-
-                    MUCHSIN</p>
+                    <table style="width: 100%; border: none; margin-top: 50px;">
+                        <tr style="border: none;">
+                            <td style="width: 60%; border: none;"></td>
+                            <td style="width: 40%; border: none; text-align: center;">
+                                Banda Aceh, ' . Carbon::now()->format('d-m-Y') . '<br>
+                                Mengetahui<br>
+                                Kepala Laboratorium FST<br><br><br><br><br>
+                                <b><u>MUCHSIN</u></b><br>
+                                NIDN. 19283746502
+                            </td>
+                        </tr>
+                    </table>
                 </div>
             </body>
             </html>';
@@ -719,6 +740,19 @@ class PdfController extends Controller
             $html .= '
                 <div class="footer">
                     <p>Catatan: Dokumen ini dicetak secara otomatis dari sistem Reservasi Lab FST-UUI</p>
+
+                    <table style="width: 100%; border: none; margin-top: 50px;">
+                        <tr style="border: none;">
+                            <td style="width: 60%; border: none;"></td>
+                            <td style="width: 40%; border: none; text-align: center;">
+                                Banda Aceh, ' . Carbon::now()->format('d-m-Y') . '<br>
+                                Mengetahui<br>
+                                Kepala Laboratorium FST<br><br><br><br><br>
+                                <b><u>MUCHSIN</u></b><br>
+                                NIDN. 19283746502
+                            </td>
+                        </tr>
+                    </table>
                 </div>
             </body>
             </html>';

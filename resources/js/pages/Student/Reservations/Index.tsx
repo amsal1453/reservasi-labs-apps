@@ -7,7 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Trash2 } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Trash2, AlertCircle } from 'lucide-react';
 
 interface Lab {
     id: number;
@@ -34,11 +35,18 @@ interface Reservation {
 
 interface PageProps {
     reservations: Reservation[];
-    success?: string;
-    error?: string;
+    flash?: {
+        success?: string;
+        error?: string;
+        showPendingWarning?: boolean;
+    };
+    errors?: {
+        pendingConflict?: string;
+        conflict?: string;
+    };
 }
 
-export default function Index({ reservations, success, error }: PageProps) {
+export default function Index({ reservations, flash = {}, errors }: PageProps) {
     const [isDeleting, setIsDeleting] = useState(false);
     const [reservationToDelete, setReservationToDelete] = useState<number | null>(null);
 
@@ -88,16 +96,36 @@ export default function Index({ reservations, success, error }: PageProps) {
                 </Link>
             </div>
 
-            {success && (
-                <div className="bg-green-50 border border-green-200 text-green-800 rounded-md p-4 mb-6">
-                    {success}
-                </div>
+            {flash?.success && (
+                <Alert className="mb-6 bg-green-50 text-green-800 border-green-200">
+                    <AlertCircle className="h-4 w-4 text-green-800" />
+                    <AlertTitle>Sukses</AlertTitle>
+                    <AlertDescription>{flash.success}</AlertDescription>
+                </Alert>
             )}
 
-            {error && (
-                <div className="bg-red-50 border border-red-200 text-red-800 rounded-md p-4 mb-6">
-                    {error}
-                </div>
+            {flash?.error && (
+                <Alert className="mb-6 bg-red-50 text-red-800 border-red-200">
+                    <AlertCircle className="h-4 w-4 text-red-800" />
+                    <AlertTitle>Error</AlertTitle>
+                    <AlertDescription>{flash.error}</AlertDescription>
+                </Alert>
+            )}
+
+            {errors?.pendingConflict && (
+                <Alert className="mb-6 bg-yellow-50 text-yellow-800 border-yellow-200">
+                    <AlertCircle className="h-4 w-4 text-yellow-800" />
+                    <AlertTitle>Perhatian</AlertTitle>
+                    <AlertDescription>{errors.pendingConflict}</AlertDescription>
+                </Alert>
+            )}
+
+            {errors?.conflict && (
+                <Alert className="mb-6 bg-red-50 text-red-800 border-red-200">
+                    <AlertCircle className="h-4 w-4 text-red-800" />
+                    <AlertTitle>Error</AlertTitle>
+                    <AlertDescription>{errors.conflict}</AlertDescription>
+                </Alert>
             )}
 
             {reservations.length === 0 ? (
