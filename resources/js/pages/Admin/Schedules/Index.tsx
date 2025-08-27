@@ -63,6 +63,10 @@ interface EventDetails {
     group_id?: string | null;
     repeat_weeks?: number;
     current_recurrence?: number;
+    // Sumber data event: berasal dari tabel Schedule atau hasil mapping Reservation
+    source?: 'schedule' | 'reservation';
+    // Jika event adalah reservasi, simpan id reservasi untuk aksi lebih lanjut
+    reservationId?: number | null;
 }
 
 export default function Index({ schedules, selectedLab, import_errors, message }: Props) {
@@ -189,6 +193,11 @@ export default function Index({ schedules, selectedLab, import_errors, message }
         const schedule = schedules.find(s => s.id === scheduleId);
 
         if (schedule) {
+            // Tentukan sumber event reservasi
+            const isReservation = schedule.type === 'reservation';
+            const reservationId = schedule.reservation?.id ?? null;
+            const isReservationMapping = isReservation && reservationId !== null && schedule.id === reservationId;
+
             setSelectedEvent({
                 id: schedule.id,
                 title: schedule.type === 'lecture'
@@ -200,7 +209,9 @@ export default function Index({ schedules, selectedLab, import_errors, message }
                 lecturer: schedule.lecturer?.name || schedule.lecturer_name,
                 lab: schedule.lab?.name,
                 group_id: schedule.group_id,
-                repeat_weeks: schedule.repeat_weeks
+                repeat_weeks: schedule.repeat_weeks,
+                source: isReservationMapping ? 'reservation' : 'schedule',
+                reservationId: reservationId,
             });
             setIsDetailsModalOpen(true);
         }
@@ -241,26 +252,35 @@ export default function Index({ schedules, selectedLab, import_errors, message }
         }
     };
 
-    const handleImportSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!importFile) return;
+    // Handler penghapusan event reservasi (baik dari jadwal atau dari data reservasi)
+    const handleDeleteReservation = () => {
+        if (!selectedEvent) return;
 
-        const formData = new FormData();
-        formData.append('import_file', importFile);
-
-        setIsImporting(true);
-
-        router.post(route('admin.schedules.import'), formData, {
-            onSuccess: () => {
-                setIsImportModalOpen(false);
-                setImportFile(null);
-                setIsImporting(false);
-            },
-            onError: () => {
-                setIsImporting(false);
+        // Jika event dari tabel Schedule (sudah dibuat jadwalnya), gunakan endpoint destroy schedule
+        if (selectedEvent.source === 'schedule') {
+            if (confirm('Apakah Anda yakin ingin menghapus jadwal reservasi ini dari kalender?')) {
+                router.delete(route('admin.schedules.destroy', selectedEvent.id), {
+                    onSuccess: () => {
+                        setIsDetailsModalOpen(false);
+                    },
+                });
             }
-        });
+            return;
+        }
+
+        // Jika event berasal dari mapping Reservation (belum jadi jadwal), tolak/batalkan reservasinya
+        if (selectedEvent.reservationId) {
+            if (confirm('Apakah Anda yakin ingin membatalkan reservasi ini?')) {
+                router.post(route('admin.reservations.reject', selectedEvent.reservationId), { notes: 'Dihapus melalui kalender' }, {
+                    onSuccess: () => {
+                      setIsDetailsModalOpen(false);
+                  },
+              });
+          }
+      }
     };
+
+    // Hapus: fungsi impor belum digunakan dan menyebabkan error linter karena variabel tidak didefinisikan
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -303,11 +323,11 @@ export default function Index({ schedules, selectedLab, import_errors, message }
                                 </Link>
                                 {/* Link untuk cetak jadwal */}
                                 {selectedLab && selectedLab.id && (
-                                    <a
-                                        href={route('admin.labs.pdf', { lab_id: selectedLab.id })}
-                                        target="_blank"
-                                        className="inline-flex items-center justify-center rounded-md text-sm font-medium bg-purple-500 text-white hover:bg-purple-600 h-10 px-4 py-2"
-                                    >
+                                        <a
+                                            href={route('admin.labs.pdf', { lab_id: selectedLab.id })}
+                                            target="_blank"
+                                            className="inline-flex items-center justify-center rounded-md text-sm font-medium bg-purple-500 text-white hover:bg-purple-600 h-10 px-4 py-2"
+                                        >
                                         <Printer className="w-4 h-4 mr-2" />
                                         Cetak PDF
                                     </a>
@@ -635,6 +655,22 @@ export default function Index({ schedules, selectedLab, import_errors, message }
                                         Hapus
                                     </Button>
                                 </>
+                            )}
+                            {selectedEvent && selectedEvent.type === 'reservation' && (
+                                <Button
+                                    variant="destructive"
+                                    onClick={() => {
+                                        // Untuk reservasi, panggil handler khusus
+                                        // Handler akan memutuskan apakah menghapus schedule atau menolak reservasi
+                                        // berdasarkan sumber event
+                                        // @ts-ignore
+                                        handleDeleteReservation();
+                                    }}
+                                    className="flex items-center"
+                                >
+                                    <Trash2 className="w-4 h-4 mr-2" />
+                                    Hapus
+                                </Button>
                             )}
                         </DialogFooter>
                     </DialogContent>
