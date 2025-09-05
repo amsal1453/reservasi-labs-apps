@@ -58,7 +58,7 @@ export default function Dashboard({
 
             <div className="space-y-6">
                 {/* Welcome section */}
-                <div className="bg-white p-6 rounded-lg shadow-sm border">
+                <div className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 p-6 rounded-lg shadow-sm">
                     <h1 className="text-2xl font-bold text-[#800000]">Selamat Datang di Sistem Reservasi Lab</h1>
                     <p className="text-gray-600 mt-2">
                         Kelola reservasi lab, lihat jadwal, dan pantau notifikasi Anda.
@@ -67,7 +67,7 @@ export default function Dashboard({
 
                 {/* Stats */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <Card>
+                    <Card className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700">
                         <CardHeader className="pb-2">
                             <CardTitle className="text-sm font-medium text-gray-500">Total Reservasi</CardTitle>
                         </CardHeader>
@@ -75,7 +75,7 @@ export default function Dashboard({
                             <div className="text-3xl font-bold">{stats.totalReservations}</div>
                         </CardContent>
                     </Card>
-                    <Card>
+                    <Card className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700">
                         <CardHeader className="pb-2">
                             <CardTitle className="text-sm font-medium text-gray-500">Menunggu Persetujuan</CardTitle>
                         </CardHeader>
@@ -83,7 +83,7 @@ export default function Dashboard({
                             <div className="text-3xl font-bold text-yellow-500">{stats.pendingReservations}</div>
                         </CardContent>
                     </Card>
-                    <Card>
+                    <Card className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700">
                         <CardHeader className="pb-2">
                             <CardTitle className="text-sm font-medium text-gray-500">Disetujui</CardTitle>
                         </CardHeader>
@@ -91,7 +91,7 @@ export default function Dashboard({
                             <div className="text-3xl font-bold text-green-500">{stats.approvedReservations}</div>
                         </CardContent>
                     </Card>
-                    <Card>
+                    <Card className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700">
                         <CardHeader className="pb-2">
                             <CardTitle className="text-sm font-medium text-gray-500">Ditolak</CardTitle>
                         </CardHeader>
@@ -104,7 +104,7 @@ export default function Dashboard({
                 {/* Main content */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Upcoming Reservations */}
-                    <Card className="col-span-1">
+                    <Card className="col-span-1 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700">
                         <CardHeader className="pb-3">
                             <div className="flex items-center justify-between">
                                 <CardTitle className="text-lg font-semibold">Reservasi Mendatang</CardTitle>
@@ -155,7 +155,7 @@ export default function Dashboard({
                     </Card>
 
                     {/* Today's Schedules */}
-                    <Card className="col-span-1">
+                    <Card className="col-span-1 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700">
                         <CardHeader className="pb-3">
                             <div className="flex items-center justify-between">
                                 <CardTitle className="text-lg font-semibold">Jadwal Hari Ini</CardTitle>
@@ -190,7 +190,7 @@ export default function Dashboard({
                     </Card>
 
                     {/* Notifications */}
-                    <Card className="col-span-1">
+                    <Card className="col-span-1 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700">
                         <CardHeader className="pb-3">
                             <div className="flex items-center justify-between">
                                 <CardTitle className="text-lg font-semibold">Notifikasi Terbaru</CardTitle>
@@ -224,7 +224,7 @@ export default function Dashboard({
                 </div>
 
                 {/* Quick Actions */}
-                <div className="bg-white p-6 rounded-lg shadow-sm border">
+                <div className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 p-6 rounded-lg shadow-sm">
                     <h2 className="text-lg font-semibold mb-4 text-[#800000]">Aksi Cepat</h2>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <Button className="bg-[#800000] hover:bg-[#800000]/90" asChild>

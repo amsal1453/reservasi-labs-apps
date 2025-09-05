@@ -61,7 +61,7 @@ export default function Dashboard({ stats, recentReservations, upcomingReservati
     return (
         <AppLayout breadcrumbs={[{ title: 'Dashboard', href: '/admin/dashboard' }]}>
             <Head title="Dashboard" />
-            <div className="flex flex-col gap-6 p-2 min-h-screen bg-white mt-12">
+            <div className="flex flex-col gap-6 p-2 min-h-screen bg-white dark:bg-neutral-900 mt-12">
                 {/* Statistik Ringkas */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 -mt-12 z-10">
                     {statList.map((stat, idx) => (
@@ -72,7 +72,7 @@ export default function Dashboard({ stats, recentReservations, upcomingReservati
                 {/* Reservasi Mendatang & Pemberitahuan Terbaru */}
                 <div className="grid md:grid-cols-2 gap-4 mt-4">
                     {/* Reservasi Mendatang */}
-                    <div className="rounded-xl shadow p-4 border">
+                    <div className="rounded-xl shadow p-4 border bg-white dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700">
                         <h2 className="font-bold text-lg mb-2">Reservasi Mendatang</h2>
                         <div className="text-sm text-gray-500 mb-3">Sesi lab terjadwal Anda berikutnya</div>
                         <div className="space-y-3">
@@ -101,7 +101,7 @@ export default function Dashboard({ stats, recentReservations, upcomingReservati
                         </div>
                     </div>
                     {/* Pemberitahuan Terbaru */}
-                    <div className="rounded-xl shadow p-4 border">
+                    <div className="rounded-xl shadow p-4 border bg-white dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700">
                         <div className="flex justify-between items-center mb-2">
                             <h2 className="font-bold text-lg">Pemberitahuan Terbaru</h2>
                             <span className="text-red-500"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V4a2 2 0 10-4 0v1.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg></span>
@@ -134,7 +134,7 @@ export default function Dashboard({ stats, recentReservations, upcomingReservati
                 </div>
 
                 {/* Tabel Reservasi Terbaru */}
-                <div className="rounded-xl shadow p-4 mt-4 border">
+                <div className="rounded-xl shadow p-4 mt-4 border bg-white dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700">
                     <h2 className="font-bold text-lg mb-2">Reservasi Terbaru</h2>
                     {recentReservations && recentReservations.length > 0 ? (
                         <table className="w-full text-sm">

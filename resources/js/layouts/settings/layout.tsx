@@ -52,27 +52,27 @@ export default function SettingsLayout({ children }: { children: ReactNode }) {
                         <Link
                             href={route('profile.edit')}
                             className={`${route().current('profile.edit')
-                                    ? 'bg-neutral-100 text-neutral-900'
-                                    : 'text-neutral-600 hover:text-neutral-900'
-                                } flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all`}
+                                ? 'bg-neutral-100 text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100'
+                                : 'text-neutral-600 hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-white'
+                                } inline-flex w-fit items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all`}
                         >
                             Profile
                         </Link>
                         <Link
                             href={route('password.edit')}
                             className={`${route().current('password.edit')
-                                    ? 'bg-neutral-100 text-neutral-900'
-                                    : 'text-neutral-600 hover:text-neutral-900'
-                                } flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all`}
+                                ? 'bg-neutral-100 text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100'
+                                : 'text-neutral-600 hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-white'
+                                } inline-flex w-fit items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all`}
                         >
                             Password
                         </Link>
                         <Link
                             href={route('appearance')}
                             className={`${route().current('appearance')
-                                    ? 'bg-neutral-100 text-neutral-900'
-                                    : 'text-neutral-600 hover:text-neutral-900'
-                                } flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all`}
+                                ? 'bg-neutral-100 text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100'
+                                : 'text-neutral-600 hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-white'
+                                } inline-flex w-fit items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all`}
                         >
                             Appearance
                         </Link>

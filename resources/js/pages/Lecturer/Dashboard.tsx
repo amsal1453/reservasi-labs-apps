@@ -57,7 +57,7 @@ export default function Dashboard({ upcomingReservations, recentNotifications, s
             <h1 className="mb-6 text-2xl font-bold text-[#800000]">Dashboard Dosen</h1>
 
             <div className="grid gap-6 md:grid-cols-3">
-                <Card>
+                <Card className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700">
                     <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
                         <CardTitle className="text-sm font-medium">Total Reservasi</CardTitle>
                         <CalendarDays className="w-4 h-4 text-[#800000]" />
@@ -69,7 +69,7 @@ export default function Dashboard({ upcomingReservations, recentNotifications, s
                         </p>
                     </CardContent>
                 </Card>
-                <Card>
+                <Card className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700">
                     <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
                         <CardTitle className="text-sm font-medium">Sesi Mendatang</CardTitle>
                         <Clock className="w-4 h-4 text-[#800000]" />
@@ -81,7 +81,7 @@ export default function Dashboard({ upcomingReservations, recentNotifications, s
                         </p>
                     </CardContent>
                 </Card>
-                <Card>
+                <Card className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700">
                     <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
                         <CardTitle className="text-sm font-medium">Lab Tersedia</CardTitle>
                         <School className="w-4 h-4 text-[#800000]" />
@@ -96,7 +96,7 @@ export default function Dashboard({ upcomingReservations, recentNotifications, s
             </div>
 
             <div className="grid gap-6 mt-6 md:grid-cols-2">
-                <Card className="col-span-1">
+                <Card className="col-span-1 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700">
                     <CardHeader>
                         <CardTitle>Reservasi Mendatang</CardTitle>
                         <CardDescription>Sesi lab yang telah dijadwalkan</CardDescription>
@@ -133,7 +133,7 @@ export default function Dashboard({ upcomingReservations, recentNotifications, s
                     </CardContent>
                 </Card>
 
-                <Card className="col-span-1">
+                <Card className="col-span-1 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700">
                     <CardHeader className="flex flex-row items-center justify-between">
                         <div>
                             <CardTitle>Notifikasi Terbaru</CardTitle>

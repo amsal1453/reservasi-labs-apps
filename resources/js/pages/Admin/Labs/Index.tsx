@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { Edit, Plus, Trash2, Eye } from 'lucide-react';
 
 import AppLayout from '@/layouts/app-layout';
@@ -62,10 +62,14 @@ export default function Index({ labs }: Props) {
     };
 
     const handleDeleteConfirm = () => {
-        if (labToDelete) {
-            window.location.href = route('admin.labs.destroy', labToDelete.id);
-        }
-        setIsDeleteDialogOpen(false);
+        if (!labToDelete) return;
+        router.delete(route('admin.labs.destroy', labToDelete.id), {
+            preserveScroll: true,
+            onFinish: () => {
+                setIsDeleteDialogOpen(false);
+                setLabToDelete(null);
+            },
+        });
     };
 
     return (

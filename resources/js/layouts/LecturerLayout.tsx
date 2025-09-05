@@ -60,9 +60,9 @@ export default function LecturerLayout({ children, breadcrumbs = [] }: LecturerL
     ];
 
     return (
-        <div className="min-h-screen bg-white">
+        <div className="min-h-screen bg-white dark:bg-neutral-900">
             {/* Mobile sidebar toggle */}
-            <div className="lg:hidden fixed top-0 left-0 right-0 z-30 bg-white border-b px-4 py-2">
+            <div className="lg:hidden fixed top-0 left-0 right-0 z-30 bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800 px-4 py-2">
                 <div className="flex items-center justify-between">
                     <button
                         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -85,14 +85,14 @@ export default function LecturerLayout({ children, breadcrumbs = [] }: LecturerL
                             </div>
                         </button>
                         {isProfileOpen && (
-                            <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
-                                <div className="px-4 py-2 text-sm text-gray-700 border-b">
+                            <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-neutral-900 rounded-md shadow-lg py-1 z-50">
+                                <div className="px-4 py-2 text-sm text-gray-700 dark:text-gray-200 border-b border-neutral-200 dark:border-neutral-800">
                                     <div className="font-medium">{auth.user.name}</div>
                                     <div className="text-gray-500">{auth.user.email}</div>
                                 </div>
                                 <Link
                                     href="/settings/profile"
-                                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                    className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-neutral-800"
                                 >
                                     Profile
                                 </Link>
@@ -100,7 +100,7 @@ export default function LecturerLayout({ children, breadcrumbs = [] }: LecturerL
                                     href={route('logout')}
                                     method="post"
                                     as="button"
-                                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-neutral-800"
                                 >
                                     Logout
                                 </Link>
@@ -196,7 +196,7 @@ export default function LecturerLayout({ children, breadcrumbs = [] }: LecturerL
             {/* Main content - updated to match app-layout style */}
             <div className="lg:pl-64">
                 {/* Header with date, breadcrumbs and notification bell - styled like app-sidebar-header */}
-                <div className="bg-white border-b">
+                <div className="bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800">
                     <div className="flex items-center justify-between gap-4 px-6 py-4">
                         {/* Left: Breadcrumbs */}
                         <div className="flex items-center gap-4">
